@@ -1,21 +1,26 @@
-package com.atlassian.tutorial.myPlugin.sqs;
+package com.atlassian.tutorial.myPlugin.services;
 
 
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.atlassian.jira.issue.Issue;
 import com.google.gson.Gson;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class sqsSenderService {
+public class jiraEventSqsSenderService {
 
-    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-    private static final String QUEUE_URL = "your-sqs-queue-url";
+
+    @Value("${aws.sqs.queue.url}")
+    private String QUEUE_URL;
+
+    @Autowired
+    private AmazonSQS sqsClient;
 
     public void sendToQueue(Issue issue) {
         Map<String, String> messageAttributes = new HashMap<>();

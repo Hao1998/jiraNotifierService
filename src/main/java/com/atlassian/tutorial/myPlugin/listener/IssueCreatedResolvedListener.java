@@ -1,8 +1,7 @@
-package com.atlassian.tutorial.myPlugin;
+package com.atlassian.tutorial.myPlugin.listener;
 
 
 import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.atlassian.event.api.EventListener;
@@ -20,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 
@@ -30,7 +30,10 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
     private final CommentManager commentManager = ComponentAccessor.getCommentManager();
 
     private final AmazonSNS snsClient = AmazonSNSClientBuilder.defaultClient();
-    private static final String SNS_TOPIC_ARN = "your-sns-topic-arn";
+
+
+    @Value("${aws.sns.topic.arn}")
+    public String snsTopicArn;
 
     @JiraImport
     private final EventPublisher eventPublisher;
@@ -73,7 +76,7 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
                         issue.getSummary());
 
                 PublishRequest publishRequest = new PublishRequest()
-                        .withTopicArn(SNS_TOPIC_ARN)
+                        .withTopicArn(snsTopicArn)
                         .withMessage(message);
                 snsClient.publish(publishRequest);
                 log.info("Notification sent for critical issue: {}", issue.getKey());
