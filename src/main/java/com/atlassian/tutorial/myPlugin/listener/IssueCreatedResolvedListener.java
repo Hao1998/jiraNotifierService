@@ -1,9 +1,6 @@
 package com.atlassian.tutorial.myPlugin.listener;
 
 
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sns.model.PublishRequest;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.jira.component.ComponentAccessor;
@@ -13,6 +10,8 @@ import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.comments.Comment;
 import com.atlassian.jira.issue.comments.CommentManager;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 
 @Component
 public class IssueCreatedResolvedListener implements InitializingBean, DisposableBean {
@@ -29,17 +29,12 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
     private static final Logger log = LoggerFactory.getLogger(IssueCreatedResolvedListener.class);
     private final CommentManager commentManager = ComponentAccessor.getCommentManager();
 
-    private final AmazonSNS snsClient = AmazonSNSClientBuilder.defaultClient();
-
-
-    @Value("${aws.sns.topic.arn}")
-    public String snsTopicArn;
-
     @JiraImport
     private final EventPublisher eventPublisher;
 
     @Autowired
     public IssueCreatedResolvedListener(EventPublisher eventPublisher1) {
+        log.info("Constructing IssueCreatedResolvedListener");
         this.eventPublisher = eventPublisher1;
     }
 
@@ -60,7 +55,7 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
     public void onIssueEvent(IssueEvent issueEvent) {
         Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
-
+        log.info("Processing event type: {} for issue: {}", eventTypeId, issue.getKey());
         if (eventTypeId.equals(EventType.ISSUE_CREATED_ID)) {
             log.info("Issue {} has been created at {}.", issue.getKey(), issue.getCreated());
 
@@ -70,17 +65,17 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
                 commentManager.create(issue, creator, "This issue was created by " + creator.getDisplayName() + ".", true);
             }
 
-            if (isCriticalIssue(issue)) {
-                String message = String.format("Critical Issue Created: [%s] %s",
-                        issue.getKey(),
-                        issue.getSummary());
-
-                PublishRequest publishRequest = new PublishRequest()
-                        .withTopicArn(snsTopicArn)
-                        .withMessage(message);
-                snsClient.publish(publishRequest);
-                log.info("Notification sent for critical issue: {}", issue.getKey());
-            }
+//            if (isCriticalIssue(issue)) {
+//                String message = String.format("Critical Issue Created: [%s] %s",
+//                        issue.getKey(),
+//                        issue.getSummary());
+//
+//                PublishRequest publishRequest = new PublishRequest()
+//                        .withTopicArn(snsTopicArn)
+//                        .withMessage(message);
+//                snsClient.publish(publishRequest);
+//                log.info("Notification sent for critical issue: {}", issue.getKey());
+//            }
 
 
         } else if (eventTypeId.equals(EventType.ISSUE_RESOLVED_ID)) {

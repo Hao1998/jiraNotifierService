@@ -1,34 +1,45 @@
-package com.atlassian.tutorial.myPlugin.config;
-
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-
-public class AWSconfig {
-    @Value("${aws.accessKey}")
-    private String accessKey;
-
-    @Value("${aws.secretKey}")
-    private String secretKey;
-
-    @Bean
-    public AmazonSQS sqsClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(
-                        new BasicAWSCredentials(accessKey, secretKey)))
-                .build();
-    }
-
-    @Bean
-    public AmazonSNS snsClient() {
-        return AmazonSNSClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(
-                        new BasicAWSCredentials(accessKey, secretKey)))
-                .build();
-    }
-}
+//package com.atlassian.tutorial.myPlugin.config;
+//
+//
+//import org.springframework.beans.factory.annotation.Value;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.stereotype.Component;
+//import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+//import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+//import software.amazon.awssdk.regions.Region;
+//import software.amazon.awssdk.services.sns.SnsClient;
+//import software.amazon.awssdk.services.sqs.SqsClient;
+//
+//
+//@Configuration
+//@Component
+//public class AWSconfig {
+//    @Value("${aws.accessKey}")
+//    private String accessKey;
+//
+//    @Value("${aws.secretKey}")
+//    private String secretKey;
+//
+//    @Value("${aws.region:us-east-1}")
+//    private String region;
+//
+//
+//    @Bean
+//    public SqsClient sqsClient() {
+//        return SqsClient.builder()
+//                .region(Region.of(region))
+//                .credentialsProvider(StaticCredentialsProvider.create(
+//                        AwsBasicCredentials.create(accessKey, secretKey)))
+//                .build();
+//    }
+//
+//    @Bean
+//    public SnsClient snsClient() {
+//        return SnsClient.builder()
+//                .region(Region.of(region))
+//                .credentialsProvider(StaticCredentialsProvider.create(
+//                        AwsBasicCredentials.create(accessKey, secretKey)))
+//                .build();
+//    }
+//}
