@@ -7,12 +7,12 @@ import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
-import com.atlassian.jira.issue.comments.Comment;
 import com.atlassian.jira.issue.comments.CommentManager;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
+import com.atlassian.sal.api.net.*;
+import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -21,7 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class IssueCreatedResolvedListener implements InitializingBean, DisposableBean {
@@ -32,22 +33,35 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
     @JiraImport
     private final EventPublisher eventPublisher;
 
+    // Hardcoded values
+    private final String apiEndpoint = "https://9rdfyfozd2.execute-api.us-east-1.amazonaws.com/prod/messages";
+    private final String apiKey = "lcjkQE3MjL1D9uIpdd9AO8Q7dzyyPViN481Ksc5B";
+    private final String snsTopicArn = "arn:aws:sns:us-east-1:637423205741:jira-critical-issues";
+
+    private final Gson gson = new Gson();
+
+    @ComponentImport
+    private final RequestFactory requestFactory;
+
+
+
     @Autowired
-    public IssueCreatedResolvedListener(EventPublisher eventPublisher1) {
-        log.info("Constructing IssueCreatedResolvedListener");
+    public IssueCreatedResolvedListener(EventPublisher eventPublisher1, RequestFactory requestFactory) {
+        System.out.println("Constructing IssueCreatedResolvedListener");
         this.eventPublisher = eventPublisher1;
+        this.requestFactory = requestFactory;
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        log.info("Enabling plugin");
+        System.out.println("Enabling plugin");
         eventPublisher.register(this);
     }
 
 
     @Override
     public void destroy() throws Exception {
-        log.info("Disabling plugin");
+        System.out.println("Disabling plugin");
         eventPublisher.unregister(this);
     }
 
@@ -55,9 +69,9 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
     public void onIssueEvent(IssueEvent issueEvent) {
         Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
-        log.info("Processing event type: {} for issue: {}", eventTypeId, issue.getKey());
+        System.out.println("Processing event type: {} for issue: {}");
         if (eventTypeId.equals(EventType.ISSUE_CREATED_ID)) {
-            log.info("Issue {} has been created at {}.", issue.getKey(), issue.getCreated());
+            System.out.println("Issue {} has been created at {}.");
 
             ApplicationUser creator = issue.getCreator();
 
@@ -65,29 +79,60 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
                 commentManager.create(issue, creator, "This issue was created by " + creator.getDisplayName() + ".", true);
             }
 
-//            if (isCriticalIssue(issue)) {
-//                String message = String.format("Critical Issue Created: [%s] %s",
-//                        issue.getKey(),
-//                        issue.getSummary());
-//
-//                PublishRequest publishRequest = new PublishRequest()
-//                        .withTopicArn(snsTopicArn)
-//                        .withMessage(message);
-//                snsClient.publish(publishRequest);
-//                log.info("Notification sent for critical issue: {}", issue.getKey());
-//            }
+            if (isCriticalIssue(issue)) {
+                sendCriticalIssueNotification(issue);
+            }
 
 
         } else if (eventTypeId.equals(EventType.ISSUE_RESOLVED_ID)) {
-            log.info("Issue {} has been resolved at {}.", issue.getKey(), issue.getResolutionDate());
+            System.out.println("Issue {} has been resolved at {}.");
         } else if (eventTypeId.equals(EventType.ISSUE_CLOSED_ID)) {
-            log.info("Issue {} has been closed at {}.", issue.getKey(), issue.getUpdated());
+            System.out.println("Issue {} has been closed at {}.");
         }
     }
 
 
     private boolean isCriticalIssue(Issue issue) {
+        System.out.println("asdasdasdasdasdsad: " + issue.getPriority().getName());
         return "Highest".equals(issue.getPriority().getName()) ||
                 "Critical".equals(issue.getPriority().getName());
+    }
+
+    // Add this new method to your class:
+    private void sendCriticalIssueNotification(Issue issue) {
+        try {
+            // Prepare the message payload
+            Map<String, Object> message = new HashMap<>();
+            message.put("title", "Critical Issue Created: " + issue.getKey());
+            message.put("content", String.format("A critical issue has been created:%n" +
+                            "Key: %s%n" +
+                            "Summary: %s%n" +
+                            "Priority: %s%n" +
+                            "Creator: %s",
+                    issue.getKey(),
+                    issue.getSummary(),
+                    issue.getPriority().getName(),
+                    issue.getCreator().getDisplayName()));
+
+            // Prepare the full request payload
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("message", message);
+            payload.put("topicArn", snsTopicArn);
+
+            // Convert payload to JSON
+            String jsonPayload = gson.toJson(payload);
+
+            // Create and execute request
+            Request request = requestFactory.createRequest(Request.MethodType.POST, apiEndpoint);
+            request.setHeader("Content-Type", "application/json");
+            request.setHeader("x-api-key", apiKey);
+            request.setRequestBody(jsonPayload);
+
+            String response = request.execute();
+
+            System.out.println("API Response: " + response);
+        } catch (Exception e) {
+            System.out.println("Error sending critical issue notification: " + e);
+        }
     }
 }
