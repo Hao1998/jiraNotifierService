@@ -18,6 +18,13 @@
     <packaging>atlassian-plugin</packaging>
     <dependencies>
 
+<!--        <dependency>-->
+<!--            <groupId>log4j</groupId>-->
+<!--            <artifactId>log4j</artifactId>-->
+<!--            <version>1.2.17</version>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -25,14 +32,11 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <!-- AWS SDK v2 BOM -->
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>bom</artifactId>
-            <version>2.20.162</version>
-            <type>pom</type>
-            <scope>import</scope>
+            <groupId>com.atlassian.sal</groupId>
+            <artifactId>sal-api</artifactId>
+            <version>4.4.3</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -93,6 +97,27 @@
             <scope>test</scope>
         </dependency>
         -->
+
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib-nodep</artifactId>
+            <version>3.3.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>5.3.9</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>5.3.9</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
@@ -109,63 +134,25 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-help-plugin</artifactId>
-                <version>3.1.0</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven</groupId>
-                        <artifactId>maven-core</artifactId>
-                        <version>3.5.4</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.apache.maven</groupId>
-                        <artifactId>maven-model</artifactId>
-                        <version>3.5.4</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.felix</groupId>-->
-<!--                <artifactId>maven-bundle-plugin</artifactId>-->
-<!--                <version>5.1.8</version>-->
-<!--                <configuration>-->
-<!--                    <instructions>-->
-<!--                        <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>-->
-<!--                        <Bundle-Version>${project.version}</Bundle-Version>-->
-<!--                        <Import-Package>-->
-<!--                            com.amazonaws.*;resolution:="optional";version="0.0.0",-->
-<!--                            *;resolution:="optional"-->
-<!--                        </Import-Package>-->
-<!--                        <Embed-Dependency>*;scope=compile|runtime;inline=true</Embed-Dependency>-->
-<!--                        <Embed-Transitive>true</Embed-Transitive>-->
-<!--                        <_removeheaders>Bnd-LastModified</_removeheaders>-->
-<!--                        <_nouses>true</_nouses>-->
-<!--                        <_failok>true</_failok>-->
-<!--                    </instructions>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>bundle-manifest</id>-->
-<!--                        <phase>process-classes</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>manifest</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-            <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>jira-maven-plugin</artifactId>
                 <version>${amps.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+<!--                    <log4jProperties>src/main/resources/log4j.properties</log4jProperties>-->
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
                         <!-- Add package to export here -->
                         <Export-Package>com.atlassian.tutorial.myPlugin.api,</Export-Package>
                         <!-- Add package import here -->
-                        <Import-Package>org.springframework.osgi.*;resolution:="optional", org.eclipse.gemini.blueprint.*;resolution:="optional", *</Import-Package>
+                        <Import-Package>
+                            org.springframework.osgi.*;resolution:="optional",
+                            org.eclipse.gemini.blueprint.*;resolution:="optional",
+                            org.springframework.cglib.core.*;resolution:="optional",
+                            org.springframework.cglib.proxy.*;resolution:="optional",
+                            org.springframework.cglib.reflect.*;resolution:="optional",
+                            *
+                        </Import-Package>
                         <!-- Ensure plugin is spring powered -->
                         <Spring-Context>*</Spring-Context>
                     </instructions>
@@ -216,6 +203,9 @@
     </build>
     <properties>
         <jira.version>9.12.2</jira.version>
+<!--        <jira.home>${project.basedir}/target/jira-home</jira.home>-->
+<!--        <jira.dev.mode>true</jira.dev.mode>-->
+<!--        <atlassian.dev.mode>true</atlassian.dev.mode>-->
         <amps.version>9.1.2</amps.version>
         <plugin.testrunner.version>2.0.9</plugin.testrunner.version>
         <atlassian.spring.scanner.version>2.2.4</atlassian.spring.scanner.version>

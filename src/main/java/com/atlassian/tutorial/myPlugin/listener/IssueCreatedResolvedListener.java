@@ -33,10 +33,18 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
     @JiraImport
     private final EventPublisher eventPublisher;
 
-    // Hardcoded values
-    private final String apiEndpoint = "https://9rdfyfozd2.execute-api.us-east-1.amazonaws.com/prod/messages";
-    private final String apiKey = "lcjkQE3MjL1D9uIpdd9AO8Q7dzyyPViN481Ksc5B";
-    private final String snsTopicArn = "arn:aws:sns:us-east-1:637423205741:jira-critical-issues";
+//    @Value("${aws.api.endpoint}")
+//    private String apiEndpoint;
+//
+//    @Value("${aws.api.key}")
+//    private String apiKey;
+//
+//    @Value("${aws.sns.topic.arn}")
+//    private String snsTopicArn;
+
+    private final String apiEndpoint;
+    private final String apiKey;
+    private final String snsTopicArn;
 
     private final Gson gson = new Gson();
 
@@ -46,16 +54,26 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
 
 
     @Autowired
-    public IssueCreatedResolvedListener(EventPublisher eventPublisher1, RequestFactory requestFactory) {
+    public IssueCreatedResolvedListener( EventPublisher eventPublisher,
+                                         RequestFactory requestFactory,
+                                         @Value("${aws.api.endpoint}") String apiEndpoint,
+                                         @Value("${aws.api.key}") String apiKey,
+                                         @Value("${aws.sns.topic.arn}") String snsTopicArn) {
         System.out.println("Constructing IssueCreatedResolvedListener");
-        this.eventPublisher = eventPublisher1;
+        this.eventPublisher = eventPublisher;
         this.requestFactory = requestFactory;
+        this.apiEndpoint = apiEndpoint;
+        this.apiKey = apiKey;
+        this.snsTopicArn = snsTopicArn;
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
         System.out.println("Enabling plugin");
         eventPublisher.register(this);
+        System.out.println("topicArn: " + snsTopicArn);
+        System.out.println("apiEndpoint: " + apiEndpoint);
+        System.out.println("x-api-key: " + apiKey);
     }
 
 
@@ -118,7 +136,9 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
             Map<String, Object> payload = new HashMap<>();
             payload.put("message", message);
             payload.put("topicArn", snsTopicArn);
-
+            System.out.println("topicArn: " + snsTopicArn);
+            System.out.println("apiEndpoint: " + apiEndpoint);
+            System.out.println("x-api-key: " + apiKey);
             // Convert payload to JSON
             String jsonPayload = gson.toJson(payload);
 
