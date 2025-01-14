@@ -18,6 +18,8 @@ import com.atlassian.scheduler.JobRunner;
 import com.atlassian.scheduler.JobRunnerRequest;
 import com.atlassian.scheduler.JobRunnerResponse;
 import com.google.gson.Gson;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 
@@ -27,25 +29,28 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
+@Component
 public class TicketAnalyticsJob implements JobRunner {
+
 
     private final SearchService searchService;
     private final JqlQueryParser jqlQueryParser;
     private final RequestFactory requestFactory;
-    private final String apiGatewayUrl;
-    private final String apiKey;
+
+
+    @Value("${aws.api.endpoint.analytic}")
+    private String apiGatewayUrl;
+
+    @Value("${aws.api.key}")
+    private String apiKey;
 
 
     public TicketAnalyticsJob(@ComponentImport SearchService searchService,
                               @ComponentImport JqlQueryParser jqlQueryParser,
-                              @ComponentImport RequestFactory requestFactory,
-                              String apiGatewayUrl,
-                              String apiKey) {
+                              @ComponentImport RequestFactory requestFactory) {
         this.searchService = searchService;
         this.jqlQueryParser = jqlQueryParser;
         this.requestFactory = requestFactory;
-        this.apiGatewayUrl = apiGatewayUrl;
-        this.apiKey = apiKey;
     }
 
     @Nullable

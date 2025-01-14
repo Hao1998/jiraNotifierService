@@ -88,8 +88,9 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.atlassian.scheduler</groupId>
-            <artifactId>atlassian-scheduler-core</artifactId>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-core</artifactId>
+            <version>${jira.version}</version>
             <scope>provided</scope>
         </dependency>
         <!-- Uncomment to use TestKit in your project. Details at https://bitbucket.org/atlassian/jira-testkit -->
