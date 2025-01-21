@@ -51,25 +51,45 @@ public class TicketAnalyticsJob implements JobRunner {
         this.searchService = searchService;
         this.jqlQueryParser = jqlQueryParser;
         this.requestFactory = requestFactory;
+
+        // Log initialization
+        System.out.println("TicketAnalyticsJob initialized with API Gateway URL: " + apiGatewayUrl);
     }
 
     @Nullable
     @Override
     public JobRunnerResponse runJob(JobRunnerRequest jobRunnerRequest) {
+        System.out.println("Starting TicketAnalyticsJob at: " + LocalDateTime.now());
         try {
             ApplicationUser adminUser = ComponentAccessor.getUserManager().getUserByKey("admin");
+            System.out.println("Retrieved admin user: " + (adminUser != null ? adminUser.getDisplayName() : "null"));
 
             // Get all projects
             Collection<String> projectKeys = getProjectKeys();
+            System.out.println("Found " + projectKeys.size() + " projects to process");
+
+            int processedProjects = 0;
+            int failedProjects = 0;
 
             for (String projectKey : projectKeys) {
+                System.out.println("\nProcessing project: " + projectKey);
                 try {
                     // Fetch and send tickets for each project
                     sendProjectTickets(projectKey, adminUser);
+                    processedProjects++;
+                    System.out.println("Successfully processed project: " + projectKey);
                 } catch (Exception e) {
-                    System.out.println("Error processing project: " + projectKey + " - " + e.getMessage());
+                    failedProjects++;
+                    System.out.println("Error processing project: " + projectKey);
+                    System.out.println("Error details: " + e.getMessage());
+                    e.printStackTrace();;
                 }
             }
+
+            System.out.println("\nJob completion summary:");
+            System.out.println("Total projects: " + projectKeys.size());
+            System.out.println("Successfully processed: " + processedProjects);
+            System.out.println("Failed: " + failedProjects);
 
             return JobRunnerResponse.success();
 
@@ -80,8 +100,11 @@ public class TicketAnalyticsJob implements JobRunner {
     }
 
     private void sendProjectTickets(String projectKey, ApplicationUser adminUser) throws Exception {
+        System.out.println("Fetching tickets for project: " + projectKey);
+
         // Fetch tickets
         List<Map<String, Object>> tickets = fetchTickets(projectKey, adminUser);
+        System.out.println("Fetched " + tickets.size() + " tickets for project: " + projectKey);
 
         // Prepare payload
         Map<String, Object> payload = new HashMap<>();
@@ -90,8 +113,10 @@ public class TicketAnalyticsJob implements JobRunner {
 
         // Convert payload to JSON
         String jsonPayload = new Gson().toJson(payload);
+        System.out.println("Prepared payload size (bytes): " + jsonPayload.getBytes().length);
 
         // Create and configure request
+        System.out.println("Sending request to API Gateway: " + apiGatewayUrl);
         Request request = requestFactory.createRequest(Request.MethodType.POST, apiGatewayUrl);
         request.setHeader("Content-Type", "application/json");
         request.setHeader("x-api-key", apiKey);
@@ -103,11 +128,14 @@ public class TicketAnalyticsJob implements JobRunner {
             System.out.println("API Gateway response: " + response);
         } catch (Exception e) {
             System.out.println("Failed to send data to API Gateway: " + e.getMessage());
+            System.out.println("Error details: " + e.getMessage());
             throw e;
         }
     }
 
     private String getSeverityFromIssue(Issue issue) {
+        System.out.println("Getting severity from issue: " + issue.getKey());
+
         // Try different common field names for severity
         String[] possibleFieldNames = {
                 "severity",
@@ -123,22 +151,30 @@ public class TicketAnalyticsJob implements JobRunner {
             );
 
             if (fieldValue != null) {
+                System.out.println("Found severity in field '" + fieldName + "': " + fieldValue);
                 return fieldValue.toString();
             }
         }
 
-        // Default to priority if no severity field found
-        return issue.getPriority().getName();
+        String priority = issue.getPriority().getName();
+        System.out.println("No severity field found, using priority: " + priority);
+        return priority;
     }
 
 
     private List<Map<String, Object>> fetchTickets(String projectKey, ApplicationUser adminUser) throws Exception {
+        System.out.println("Starting ticket fetch for project: " + projectKey);
+
         // Build JQL query
         String jql = "project = " + projectKey;
+        System.out.println("Using JQL query: " + jql);
+
         Query query = jqlQueryParser.parseQuery(jql);
         SearchResults<Issue> results = searchService.search(adminUser,
                 query,
                 PagerFilter.getUnlimitedFilter());
+
+        System.out.println("Found " + results.getTotal() + " tickets for project: " + projectKey);
 
         List<Map<String, Object>> tickets = new ArrayList<>();
         for (Issue issue : results.getResults()) {

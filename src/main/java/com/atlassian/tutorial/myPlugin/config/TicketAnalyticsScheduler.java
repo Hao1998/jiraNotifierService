@@ -37,7 +37,7 @@ public class TicketAnalyticsScheduler implements InitializingBean, DisposableBea
     @Override
     public void afterPropertiesSet() throws Exception {
         // Schedule the job to run daily at midnight
-        Schedule schedule = Schedule.forCronExpression("0 0 0 * * ?");
+        Schedule schedule = Schedule.forCronExpression("0 */10 * * * ?");
 
         JobConfig jobConfig = JobConfig.forJobRunnerKey(JOB_RUNNER_KEY)
                 .withSchedule(schedule);
