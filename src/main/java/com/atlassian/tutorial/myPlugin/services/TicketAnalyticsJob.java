@@ -17,6 +17,7 @@ import com.atlassian.sal.api.net.Response;
 import com.atlassian.scheduler.JobRunner;
 import com.atlassian.scheduler.JobRunnerRequest;
 import com.atlassian.scheduler.JobRunnerResponse;
+import com.atlassian.tutorial.myPlugin.config.AwsConfig;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -36,24 +37,27 @@ public class TicketAnalyticsJob implements JobRunner {
     private final SearchService searchService;
     private final JqlQueryParser jqlQueryParser;
     private final RequestFactory requestFactory;
+    private final AwsConfig awsConfig;
 
 
-    @Value("${aws.api.endpoint.analytic}")
-    private String apiGatewayUrl;
-
-    @Value("${aws.api.key}")
-    private String apiKey;
+//    @Value("${aws.api.endpoint.analytic}")
+//    private String apiGatewayUrl;
+//
+//    @Value("${aws.api.key}")
+//    private String apiKey;
 
 
     public TicketAnalyticsJob(@ComponentImport SearchService searchService,
                               @ComponentImport JqlQueryParser jqlQueryParser,
-                              @ComponentImport RequestFactory requestFactory) {
+                              @ComponentImport RequestFactory requestFactory,
+                              AwsConfig awsConfig) {
         this.searchService = searchService;
         this.jqlQueryParser = jqlQueryParser;
         this.requestFactory = requestFactory;
+        this.awsConfig = awsConfig;
 
         // Log initialization
-        System.out.println("TicketAnalyticsJob initialized with API Gateway URL: " + apiGatewayUrl);
+        System.out.println("TicketAnalyticsJob initialized with API Gateway URL: ");
     }
 
     @Nullable
@@ -116,10 +120,10 @@ public class TicketAnalyticsJob implements JobRunner {
         System.out.println("Prepared payload size (bytes): " + jsonPayload.getBytes().length);
 
         // Create and configure request
-        System.out.println("Sending request to API Gateway: " + apiGatewayUrl);
-        Request request = requestFactory.createRequest(Request.MethodType.POST, apiGatewayUrl);
+        System.out.println("Sending request to API Gateway: " + awsConfig.getBaseUrl());
+        Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getAnalyticsUrl());
         request.setHeader("Content-Type", "application/json");
-        request.setHeader("x-api-key", apiKey);
+        request.setHeader("x-api-key", awsConfig.getApiKey());
         request.setRequestBody(jsonPayload);
 
         // Send Request
@@ -136,29 +140,49 @@ public class TicketAnalyticsJob implements JobRunner {
     private String getSeverityFromIssue(Issue issue) {
         System.out.println("Getting severity from issue: " + issue.getKey());
 
-        // Try different common field names for severity
-        String[] possibleFieldNames = {
-                "severity",
-                "priority",
-                "Severity",
-                "Priority",
-                "Impact"
-        };
-
-        for (String fieldName : possibleFieldNames) {
-            Object fieldValue = issue.getCustomFieldValue(
-                    ComponentAccessor.getCustomFieldManager().getCustomFieldObjectByName(fieldName)
-            );
-
-            if (fieldValue != null) {
-                System.out.println("Found severity in field '" + fieldName + "': " + fieldValue);
-                return fieldValue.toString();
+        try {
+            // First try to get priority (most reliable)
+            if (issue.getPriority() != null) {
+                String priority = issue.getPriority().getName();
+                System.out.println("Using priority value: " + priority);
+                return priority;
             }
-        }
 
-        String priority = issue.getPriority().getName();
-        System.out.println("No severity field found, using priority: " + priority);
-        return priority;
+            // If priority is null, try custom fields
+            String[] possibleFieldNames = {
+                    "severity",
+                    "priority",
+                    "Severity",
+                    "Priority",
+                    "Impact"
+            };
+
+            for (String fieldName : possibleFieldNames) {
+                try {
+                    com.atlassian.jira.issue.fields.CustomField customField =
+                            ComponentAccessor.getCustomFieldManager().getCustomFieldObjectByName(fieldName);
+
+                    if (customField != null) {
+                        Object fieldValue = issue.getCustomFieldValue(customField);
+                        if (fieldValue != null) {
+                            System.out.println("Found value in custom field '" + fieldName + "': " + fieldValue);
+                            return fieldValue.toString();
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error checking custom field '" + fieldName + "': " + e.getMessage());
+                    // Continue to next field
+                }
+            }
+
+            // If nothing found, return default
+            System.out.println("No severity or priority found, using default value: 'Medium'");
+            return "Medium";
+
+        } catch (Exception e) {
+            System.out.println("Error in getSeverityFromIssue: " + e.getMessage());
+            return "Medium";
+        }
     }
 
 
