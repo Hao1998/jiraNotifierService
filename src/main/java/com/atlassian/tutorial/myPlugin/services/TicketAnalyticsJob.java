@@ -50,7 +50,7 @@ public class TicketAnalyticsJob implements JobRunner {
     public TicketAnalyticsJob(@ComponentImport SearchService searchService,
                               @ComponentImport JqlQueryParser jqlQueryParser,
                               @ComponentImport RequestFactory requestFactory,
-                              AwsConfig awsConfig) {
+                               AwsConfig awsConfig) {
         this.searchService = searchService;
         this.jqlQueryParser = jqlQueryParser;
         this.requestFactory = requestFactory;
@@ -120,7 +120,7 @@ public class TicketAnalyticsJob implements JobRunner {
         System.out.println("Prepared payload size (bytes): " + jsonPayload.getBytes().length);
 
         // Create and configure request
-        System.out.println("Sending request to API Gateway: " + awsConfig.getBaseUrl());
+        System.out.println("Sending request to API Gateway: " + awsConfig.getAnalyticsUrl());
         Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getAnalyticsUrl());
         request.setHeader("Content-Type", "application/json");
         request.setHeader("x-api-key", awsConfig.getApiKey());

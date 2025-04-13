@@ -1,13 +1,17 @@
 package com.atlassian.tutorial.myPlugin.config;
 
 
+import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.context.annotation.Configuration;
 
+import javax.inject.Named;
 
 
 @Configuration
+@ExportAsService({AwsConfig.class})
+@Named("awsConfig")
 public class AwsConfig {
 
     @Value("${aws.api.base.url}")

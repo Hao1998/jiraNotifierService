@@ -12,6 +12,7 @@ import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
 import com.atlassian.sal.api.net.*;
+import com.atlassian.tutorial.myPlugin.config.AwsConfig;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,21 +51,22 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
 
     @ComponentImport
     private final RequestFactory requestFactory;
-
+    private final AwsConfig awsConfig;
 
 
     @Autowired
-    public IssueCreatedResolvedListener( EventPublisher eventPublisher,
-                                         RequestFactory requestFactory,
-                                         @Value("${aws.api.endpoint}") String apiEndpoint,
-                                         @Value("${aws.api.key}") String apiKey,
-                                         @Value("${aws.sns.topic.arn}") String snsTopicArn) {
+    public IssueCreatedResolvedListener(EventPublisher eventPublisher,
+                                        RequestFactory requestFactory,
+                                        @Value("${aws.api.base.url}") String apiEndpoint,
+                                        @Value("${aws.api.key}") String apiKey,
+                                        @Value("${aws.sns.topic.arn}") String snsTopicArn, AwsConfig awsConfig) {
         System.out.println("Constructing IssueCreatedResolvedListener");
         this.eventPublisher = eventPublisher;
         this.requestFactory = requestFactory;
         this.apiEndpoint = apiEndpoint;
         this.apiKey = apiKey;
         this.snsTopicArn = snsTopicArn;
+        this.awsConfig = awsConfig;
     }
 
     @Override
@@ -137,13 +139,13 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
             payload.put("message", message);
             payload.put("topicArn", snsTopicArn);
             System.out.println("topicArn: " + snsTopicArn);
-            System.out.println("apiEndpoint: " + apiEndpoint);
+            System.out.println("apiEndpoint: " + awsConfig.getMessagesUrl());
             System.out.println("x-api-key: " + apiKey);
             // Convert payload to JSON
             String jsonPayload = gson.toJson(payload);
 
             // Create and execute request
-            Request request = requestFactory.createRequest(Request.MethodType.POST, apiEndpoint);
+            Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getMessagesUrl());
             request.setHeader("Content-Type", "application/json");
             request.setHeader("x-api-key", apiKey);
             request.setRequestBody(jsonPayload);

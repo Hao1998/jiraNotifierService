@@ -16,6 +16,39 @@
     <name>myPlugin</name>
     <description>This is the com.atlassian.tutorial:myPlugin plugin for Atlassian JIRA.</description>
     <packaging>atlassian-plugin</packaging>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.4.8</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <repositories>
+        <repository>
+            <id>maven-central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>jboss-public</id>
+            <name>JBoss Public Repository</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <dependencies>
 
 <!--        <dependency>-->
@@ -30,6 +63,12 @@
             <artifactId>spring-context</artifactId>
             <version>5.3.9</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>2.4.8</version>
         </dependency>
 
         <dependency>
@@ -67,6 +106,13 @@
             <version>${atlassian.spring.scanner.version}</version>
             <scope>provided</scope>
         </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>com.atlassian.plugin</groupId>-->
+<!--            <artifactId>atlassian-spring-scanner-runtime</artifactId>-->
+<!--            <version>2.2.0</version>-->
+<!--            <scope>runtime</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>javax.inject</groupId>
@@ -119,12 +165,6 @@
         </dependency>
 
         <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>2.4.8</version> <!-- Use a specific version -->
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-beans</artifactId>
             <version>5.3.9</version>
@@ -135,6 +175,12 @@
             <artifactId>mockito-all</artifactId>
             <version>1.8.5</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.atlassian.plugins</groupId>
+            <artifactId>atlassian-plugins-osgi-javaconfig</artifactId>
+            <version>0.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -157,6 +203,13 @@
                         <!-- Add package to export here -->
                         <Export-Package>com.atlassian.tutorial.myPlugin.api,</Export-Package>
                         <!-- Add package import here -->
+<!--                        <Import-Package>-->
+<!--                            org.springframework.*,-->
+<!--                            org.springframework.cglib.*,-->
+<!--                            org.springframework.context.*,-->
+<!--                            org.springframework.beans.*,-->
+<!--                            *-->
+<!--                        </Import-Package>-->
                         <Import-Package>
                             org.springframework.osgi.*;resolution:="optional",
                             org.eclipse.gemini.blueprint.*;resolution:="optional",
@@ -165,7 +218,7 @@
                             org.springframework.cglib.reflect.*;resolution:="optional",
                             *
                         </Import-Package>
-                        <!-- Ensure plugin is spring powered -->
+                         Ensure plugin is spring powered
                         <Spring-Context>*</Spring-Context>
                     </instructions>
                     <includedFeModuleManifests>
