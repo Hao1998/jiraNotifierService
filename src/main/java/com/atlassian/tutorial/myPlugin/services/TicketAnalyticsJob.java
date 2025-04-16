@@ -19,6 +19,7 @@ import com.atlassian.scheduler.JobRunnerRequest;
 import com.atlassian.scheduler.JobRunnerResponse;
 import com.atlassian.tutorial.myPlugin.config.AwsConfig;
 import com.google.gson.Gson;
+import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -38,13 +39,6 @@ public class TicketAnalyticsJob implements JobRunner {
     private final JqlQueryParser jqlQueryParser;
     private final RequestFactory requestFactory;
     private final AwsConfig awsConfig;
-
-
-//    @Value("${aws.api.endpoint.analytic}")
-//    private String apiGatewayUrl;
-//
-//    @Value("${aws.api.key}")
-//    private String apiKey;
 
 
     public TicketAnalyticsJob(@ComponentImport SearchService searchService,
@@ -121,14 +115,14 @@ public class TicketAnalyticsJob implements JobRunner {
 
         // Create and configure request
         System.out.println("Sending request to API Gateway: " + awsConfig.getAnalyticsUrl());
-        Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getAnalyticsUrl());
-        request.setHeader("Content-Type", "application/json");
-        request.setHeader("x-api-key", awsConfig.getApiKey());
-        request.setRequestBody(jsonPayload);
+//        Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getAnalyticsUrl());
+//        request.setHeader("Content-Type", "application/json");
+//        request.setRequestBody(jsonPayload);
+
 
         // Send Request
         try {
-            String response = request.execute();
+            String response = awsConfig.invokeApi(awsConfig.getAnalyticsUrl(), String.valueOf(Request.MethodType.POST), jsonPayload);
             System.out.println("API Gateway response: " + response);
         } catch (Exception e) {
             System.out.println("Failed to send data to API Gateway: " + e.getMessage());

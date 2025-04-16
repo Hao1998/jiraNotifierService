@@ -178,6 +178,26 @@
         </dependency>
 
         <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>1.12.99</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>1.12.99</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.atlassian.plugins</groupId>
             <artifactId>atlassian-plugins-osgi-javaconfig</artifactId>
             <version>0.6.0</version>
@@ -211,6 +231,11 @@
 <!--                            *-->
 <!--                        </Import-Package>-->
                         <Import-Package>
+                            com.amazonaws.*,
+                            com.amazonaws.auth.*,
+                            com.amazonaws.services.*,
+                            com.amazonaws.regions.*,
+                            org.springframework.*,
                             org.springframework.osgi.*;resolution:="optional",
                             org.eclipse.gemini.blueprint.*;resolution:="optional",
                             org.springframework.cglib.core.*;resolution:="optional",

@@ -145,13 +145,13 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
             String jsonPayload = gson.toJson(payload);
 
             // Create and execute request
-            Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getMessagesUrl());
-            request.setHeader("Content-Type", "application/json");
-            request.setHeader("x-api-key", apiKey);
-            request.setRequestBody(jsonPayload);
-
-            String response = request.execute();
-
+//            Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getMessagesUrl());
+//            request.setHeader("Content-Type", "application/json");
+//            request.setHeader("x-api-key", apiKey);
+//            request.setRequestBody(jsonPayload);
+//
+//            String response = request.execute();
+            String response = awsConfig.invokeApi(awsConfig.getMessagesUrl(), String.valueOf(Request.MethodType.POST), jsonPayload);
             System.out.println("API Response: " + response);
         } catch (Exception e) {
             System.out.println("Error sending critical issue notification: " + e);
