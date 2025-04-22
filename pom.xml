@@ -188,13 +188,13 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
             <version>1.12.99</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
             <version>1.12.99</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
@@ -231,10 +231,6 @@
 <!--                            *-->
 <!--                        </Import-Package>-->
                         <Import-Package>
-                            com.amazonaws.*,
-                            com.amazonaws.auth.*,
-                            com.amazonaws.services.*,
-                            com.amazonaws.regions.*,
                             org.springframework.*,
                             org.springframework.osgi.*;resolution:="optional",
                             org.eclipse.gemini.blueprint.*;resolution:="optional",
