@@ -27,6 +27,10 @@
     </dependencyManagement>
     <repositories>
         <repository>
+            <id>atlassian-public</id>
+            <url>https://packages.atlassian.com/mvn/maven-external/</url>
+        </repository>
+        <repository>
             <id>maven-central</id>
             <name>Maven Central</name>
             <url>https://repo1.maven.org/maven2/</url>
@@ -64,6 +68,7 @@
             <version>5.3.9</version>
             <scope>provided</scope>
         </dependency>
+
 
         <dependency>
             <groupId>net.minidev</groupId>
@@ -185,16 +190,81 @@
         </dependency>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.4.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.13</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
             <version>1.12.99</version>
-            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
             <version>1.12.99</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -220,26 +290,37 @@
 <!--                    <log4jProperties>src/main/resources/log4j.properties</log4jProperties>-->
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
-                        <!-- Add package to export here -->
                         <Export-Package>com.atlassian.tutorial.myPlugin.api,</Export-Package>
-                        <!-- Add package import here -->
-<!--                        <Import-Package>-->
-<!--                            org.springframework.*,-->
-<!--                            org.springframework.cglib.*,-->
-<!--                            org.springframework.context.*,-->
-<!--                            org.springframework.beans.*,-->
-<!--                            *-->
-<!--                        </Import-Package>-->
+                        <Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
+                        <Embed-Dependency>
+                            aws-java-sdk-core,
+                            aws-java-sdk-sts;
+                            scope=compile;
+                            inline=false
+                        </Embed-Dependency>
+                        <Embed-Transitive>true</Embed-Transitive>
                         <Import-Package>
                             org.springframework.*,
-                            org.springframework.osgi.*;resolution:="optional",
-                            org.eclipse.gemini.blueprint.*;resolution:="optional",
-                            org.springframework.cglib.core.*;resolution:="optional",
-                            org.springframework.cglib.proxy.*;resolution:="optional",
-                            org.springframework.cglib.reflect.*;resolution:="optional",
-                            *
+                            javax.servlet.*,
+                            javax.xml.*,
+                            org.w3c.*,
+                            org.apache.http;version="[4.4,5.0)",
+                            org.apache.http.client;version="[4.4,5.0)",
+                            org.apache.http.client.methods;version="[4.4,5.0)",
+                            org.apache.http.protocol;version="[4.4,5.0)",
+                            org.apache.http.impl.client;version="[4.4,5.0)",
+                            org.apache.http.message;version="[4.4,5.0)",
+                            org.apache.http.entity;version="[4.4,5.0)",
+                            org.apache.http.util;version="[4.4,5.0)",
+                            !com.amazonaws.*,
+                            !org.apache.avalon.*,
+                            !software.amazon.*,
+                            !org.joda.*,
+                            !kotlin.*,
+                            !com.sun.*,
+                            !org.apache.commons.logging.*,
+                            *;resolution:=optional
                         </Import-Package>
-                         Ensure plugin is spring powered
                         <Spring-Context>*</Spring-Context>
                     </instructions>
                     <includedFeModuleManifests>
