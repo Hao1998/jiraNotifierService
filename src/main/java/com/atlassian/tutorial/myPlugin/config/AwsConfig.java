@@ -10,7 +10,7 @@ import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.util.IOUtils;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
-import org.apache.commons.httpclient.util.HttpURLConnection;
+import java.net.HttpURLConnection;
 import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +20,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 
@@ -54,9 +55,8 @@ public class AwsConfig {
 
     // Method to sign and send API requests
     public String invokeApi(String path, String method, String payload) {
-        try {
             String url = baseUrl + path;
-
+            System.out.println("Making request to invokeApi: " + url);
             // Create request
             DefaultRequest<String> request = new DefaultRequest<>("execute-api");
             request.setHttpMethod(HttpMethodName.fromValue(method));
@@ -76,21 +76,24 @@ public class AwsConfig {
             // (implementation will depend on your HTTP client library)
             return executeSignedRequest(request);
 
-        } catch (Exception e) {
-            // Log and handle exception
-            throw new RuntimeException("Failed to invoke API", e);
-        }
     }
 
 
     private String executeSignedRequest(Request<?> request) {
         try {
             URL url = request.getEndpoint().toURL();
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+
             connection.setRequestMethod(request.getHttpMethod().name());
 
-            // Add all headers from the signed request
+            // Log request details
+            System.out.println("Making request to: " + url);
+            System.out.println("HTTP Method: " + request.getHttpMethod().name());
+
+            // Add and log all headers from the signed request
+            System.out.println("Request Headers:");
             for (Map.Entry<String, String> header : request.getHeaders().entrySet()) {
+                System.out.println("  " + header.getKey() + ": " + header.getValue());
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
 
@@ -100,10 +103,21 @@ public class AwsConfig {
                 try (OutputStream out = connection.getOutputStream()) {
                     IOUtils.copy(request.getContent(), out);
                 }
+                System.out.println("Request body sent");
             }
 
             // Get response
             int responseCode = connection.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
+
+            // Log response headers
+            System.out.println("Response Headers:");
+            for (Map.Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
+                if (header.getKey() != null) {
+                    System.out.println("  " + header.getKey() + ": " + String.join(", ", header.getValue()));
+                }
+            }
+
             if (responseCode >= 200 && responseCode < 300) {
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(connection.getInputStream()))) {
@@ -115,9 +129,25 @@ public class AwsConfig {
                     return response.toString();
                 }
             } else {
-                throw new RuntimeException("API request failed with status: " + responseCode);
+                // Read and log the error response
+                String errorResponse = "";
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getErrorStream()))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    errorResponse = response.toString();
+                    System.out.println("Error Response: " + errorResponse);
+                } catch (Exception e) {
+                    System.out.println("Could not read error response: " + e.getMessage());
+                }
+                throw new RuntimeException("API request failed with status: " + responseCode +
+                        " Error details: " + errorResponse);
             }
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException("Failed to execute HTTP request", e);
         }
     }
