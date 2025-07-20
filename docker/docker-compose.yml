@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  jira:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - jira_data:/var/atlassian/jira
+    environment:
+      - JVM_MINIMUM_MEMORY=2048m
+      - JVM_MAXIMUM_MEMORY=4096m
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=us-east-1
+
+  postgresql:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=jira
+      - POSTGRES_PASSWORD=jirapass
+      - POSTGRES_DB=jiradb
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+
+volumes:
+  jira_data:
+  postgresql_data:

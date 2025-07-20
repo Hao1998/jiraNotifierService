@@ -55,7 +55,7 @@ public class AwsConfig {
 
     // Method to sign and send API requests
     public String invokeApi(String path, String method, String payload) {
-            String url = baseUrl + path;
+            String url = path;
             System.out.println("Making request to invokeApi: " + url);
             // Create request
             DefaultRequest<String> request = new DefaultRequest<>("execute-api");
