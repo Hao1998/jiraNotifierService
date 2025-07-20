@@ -1,9 +1,9 @@
-FROM atlassian/jira-software:9.4.0
+FROM atlassian/jira-software:latest
 
 # Switch to root for installations
 USER root
 
-# Install AWS CLI (since your container might need AWS access)
+# Install AWS CLI
 RUN apt-get update && apt-get install -y \
     curl \
     unzip \
