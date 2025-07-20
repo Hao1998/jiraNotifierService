@@ -1,9 +1,7 @@
 version: '3.8'
 services:
   jira:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/myplugin:latest
     ports:
       - "8080:8080"
     volumes:
@@ -11,9 +9,9 @@ services:
     environment:
       - JVM_MINIMUM_MEMORY=2048m
       - JVM_MAXIMUM_MEMORY=4096m
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=us-east-1
+      - AWS_REGION=${AWS_REGION}
+    depends_on:
+      - postgresql
 
   postgresql:
     image: postgres:13
