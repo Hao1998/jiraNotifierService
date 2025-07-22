@@ -24,8 +24,15 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
 
+      - name: Install Atlassian SDK
+        run: |
+          wget https://marketplace.atlassian.com/download/plugins/atlassian-plugin-sdk-tar.gz
+          tar -xzf atlassian-plugin-sdk-tar.gz
+          sudo mv atlassian-plugin-sdk-* /opt/atlassian-plugin-sdk
+          echo 'export PATH=/opt/atlassian-plugin-sdk/bin:$PATH' >> $GITHUB_ENV
+
       - name: Build with Maven
-        run: mvn clean package -DskipTests
+        run: atlas-mvn clean package -DskipTests
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
