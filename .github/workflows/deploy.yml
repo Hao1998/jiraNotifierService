@@ -26,9 +26,9 @@ jobs:
 
       - name: Install Atlassian SDK
         run: |
-          wget https://marketplace.atlassian.com/download/plugins/atlassian-plugin-sdk-tar.gz
-          tar -xzf atlassian-plugin-sdk-tar.gz
-          sudo mv atlassian-plugin-sdk-* /opt/atlassian-plugin-sdk
+          wget https://bitbucket.org/atlassian/atlassian-plugin-sdk/downloads/atlassian-plugin-sdk-8.2.7.tar.gz
+          tar -xzf atlassian-plugin-sdk-8.2.7.tar.gz
+          sudo mv atlassian-plugin-sdk-8.2.7 /opt/atlassian-plugin-sdk
           echo 'export PATH=/opt/atlassian-plugin-sdk/bin:$PATH' >> $GITHUB_ENV
 
       - name: Build with Maven
