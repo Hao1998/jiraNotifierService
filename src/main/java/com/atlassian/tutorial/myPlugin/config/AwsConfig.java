@@ -6,7 +6,6 @@ import com.amazonaws.DefaultRequest;
 import com.amazonaws.Request;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.util.IOUtils;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
@@ -46,11 +45,8 @@ public class AwsConfig {
 
     @PostConstruct
     public void init() {
-        // Create a credentials provider that assumes the role
-        credentialsProvider = new STSAssumeRoleSessionCredentialsProvider
-                .Builder("arn:aws:iam::637423205741:role/jira-plugin-api-invoker", "jira-plugin-session")
-                .withRoleSessionDurationSeconds(3600) // 1 hour
-                .build();
+        // Use default credentials provider chain for EC2
+        credentialsProvider = new com.amazonaws.auth.DefaultAWSCredentialsProviderChain();
     }
 
     // Method to sign and send API requests
