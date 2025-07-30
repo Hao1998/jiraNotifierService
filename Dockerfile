@@ -9,38 +9,22 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Try multiple sources for Atlassian SDK
-RUN echo "Attempting to download Atlassian SDK..." && \
-    (wget --timeout=60 --tries=2 \
-    https://maven.atlassian.com/public/com/atlassian/amps/atlassian-plugin-sdk/9.3.0/atlassian-plugin-sdk-9.3.0.tar.gz \
-    -O atlassian-plugin-sdk-9.3.0.tar.gz || \
-    curl -L --max-time 60 --retry 2 \
-    https://maven.atlassian.com/public/com/atlassian/amps/atlassian-plugin-sdk/9.3.0/atlassian-plugin-sdk-9.3.0.tar.gz \
-    -o atlassian-plugin-sdk-9.3.0.tar.gz) && \
-    echo "Download completed. File size: $(ls -lh atlassian-plugin-sdk-9.3.0.tar.gz)" && \
-    tar -xzf atlassian-plugin-sdk-9.3.0.tar.gz && \
-    mv atlassian-plugin-sdk-9.3.0 /opt/atlassian-plugin-sdk && \
-    rm atlassian-plugin-sdk-9.3.0.tar.gz && \
-    ls -la /opt/atlassian-plugin-sdk/bin/ && \
-    echo "SDK installation completed"
-
-# Add AMPS to PATH
-ENV PATH="/opt/atlassian-plugin-sdk/bin:${PATH}"
-
 WORKDIR /app
 
-# Verify atlas-mvn is available
-RUN which atlas-mvn && atlas-mvn --version
-
-# Copy and cache dependencies first
+# First, try with updated POM.xml using standard Maven
 COPY pom.xml .
-RUN echo "Running dependency resolution..." && \
-    atlas-mvn dependency:go-offline -B -X
+
+# Clean Maven cache and try with new repositories
+RUN mvn dependency:purge-local-repository -B || true
+
+# Download dependencies using updated repositories
+RUN mvn dependency:go-offline -B -U
 
 # Copy source code and build
 COPY src ./src
-RUN echo "Building plugin..." && \
-    atlas-mvn clean package -DskipTests -B -X
+
+# Build using standard Maven (your pom.xml has the jira-maven-plugin configured)
+RUN mvn clean package -DskipTests -B -U
 
 # Verify build output
 RUN echo "Build verification:" && \
