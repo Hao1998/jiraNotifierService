@@ -1,4 +1,35 @@
-FROM atlassian/jira-software:latest
+# ==========================================
+# Build Stage: Compile Jira Plugin
+# ==========================================
+FROM maven:3.9-eclipse-temurin-17 AS builder
+
+# Install Atlassian SDK
+RUN wget -q https://maven.atlassian.com/public/com/atlassian/amps/atlassian-plugin-sdk/9.3.0/atlassian-plugin-sdk-9.3.0.tar.gz \
+    && tar -xzf atlassian-plugin-sdk-9.3.0.tar.gz \
+    && mv atlassian-plugin-sdk-9.3.0 /opt/atlassian-plugin-sdk \
+    && rm atlassian-plugin-sdk-9.3.0.tar.gz
+
+# Add AMPS to PATH
+ENV PATH="/opt/atlassian-plugin-sdk/bin:${PATH}"
+
+WORKDIR /app
+
+# Copy and cache dependencies first
+COPY pom.xml .
+RUN atlas-mvn dependency:go-offline -B
+
+# Copy source code and build
+COPY src ./src
+RUN atlas-mvn clean package -DskipTests -B
+
+# Verify build output
+RUN ls -la target/ && \
+    find target/ -name "*.jar" -type f
+
+# ==========================================
+# Runtime Stage: Jira with Plugin
+# ==========================================
+FROM atlassian/jira-software:10.3
 
 # Switch to root for installations
 USER root
@@ -14,10 +45,18 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy your plugin JAR
-COPY target/myPlugin-1.0.0-SNAPSHOT.jar /opt/atlassian/jira/atlassian-jira/WEB-INF/lib/
+# Copy the built plugin JAR from builder stage
+COPY --from=builder /app/target/myPlugin-1.0.0-SNAPSHOT.jar \
+     /opt/atlassian/jira/atlassian-jira/WEB-INF/atlassian-bundled-plugins/
+
+# Set proper permissions
+RUN chown -R jira:jira /opt/atlassian/jira/atlassian-jira/WEB-INF/atlassian-bundled-plugins/
 
 # Switch back to jira user
 USER jira
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD curl -f http://localhost:8080/status || exit 1
 
 EXPOSE 8080
