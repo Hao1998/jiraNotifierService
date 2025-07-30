@@ -39,11 +39,26 @@
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
     </properties>
 
-    <!-- Updated repositories with correct URLs -->
+    <!-- UPDATED: New repository URLs as per Feb 2025 changes -->
     <repositories>
+        <!-- Maven Central - Primary repository -->
+        <repository>
+            <id>maven-central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+
+        <!-- NEW: Atlassian Maven Public - Updated URL -->
         <repository>
             <id>atlassian-public</id>
-            <url>https://packages.atlassian.com/maven-public/</url>
+            <name>Atlassian Public Repository</name>
+            <url>https://packages.atlassian.com/maven/public/</url>
             <releases>
                 <enabled>true</enabled>
                 <checksumPolicy>warn</checksumPolicy>
@@ -54,27 +69,73 @@
                 <checksumPolicy>warn</checksumPolicy>
             </snapshots>
         </repository>
+
+        <!-- NEW: Atlassian Maven Proxy (includes third-party dependencies) -->
         <repository>
-            <id>atlassian-maven-all</id>
-            <url>https://packages.atlassian.com/maven-all/</url>
+            <id>atlassian-proxy</id>
+            <name>Atlassian Maven Proxy</name>
+            <url>https://packages.atlassian.com/artifactory/maven-atlassian-all/</url>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
         </repository>
+
+        <!-- Additional repositories for missing dependencies -->
         <repository>
+            <id>terracotta</id>
+            <name>Terracotta</name>
+            <url>https://repo.terracotta.org/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+
+        <repository>
+            <id>gradle-plugins</id>
+            <name>Gradle Plugins</name>
+            <url>https://plugins.gradle.org/m2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
+    <!-- UPDATED: Plugin repositories with new URLs -->
+    <pluginRepositories>
+        <pluginRepository>
             <id>maven-central</id>
             <name>Maven Central</name>
             <url>https://repo1.maven.org/maven2/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+        </pluginRepository>
 
-    <pluginRepositories>
         <pluginRepository>
             <id>atlassian-public</id>
-            <url>https://packages.atlassian.com/maven-public/</url>
+            <name>Atlassian Public Repository</name>
+            <url>https://packages.atlassian.com/maven/public/</url>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
+        </pluginRepository>
+
+        <pluginRepository>
+            <id>atlassian-proxy</id>
+            <name>Atlassian Maven Proxy</name>
+            <url>https://packages.atlassian.com/artifactory/maven-atlassian-all/</url>
             <releases>
                 <enabled>true</enabled>
                 <checksumPolicy>warn</checksumPolicy>
@@ -87,6 +148,7 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <!-- Rest of your dependencies and build configuration remain the same -->
     <dependencyManagement>
         <dependencies>
             <!-- FIXED: Override problematic ehcache version -->
@@ -245,15 +307,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <!-- Added CloudWatch dependency -->
-        <!--
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-cloudwatch</artifactId>
-            <version>1.12.767</version>
-        </dependency>
-        -->
 
         <!-- CGLib updated -->
         <dependency>
