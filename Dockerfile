@@ -1,29 +1,25 @@
 # ==========================================
-# Build Stage: Compile Jira Plugin
+# Build Stage: Compile Jira Plugin with Maven
 # ==========================================
 FROM maven:3.9-eclipse-temurin-17 AS builder
 
-# Install Atlassian SDK
-RUN wget -q https://maven.atlassian.com/public/com/atlassian/amps/atlassian-plugin-sdk/9.3.0/atlassian-plugin-sdk-9.3.0.tar.gz \
-    && tar -xzf atlassian-plugin-sdk-9.3.0.tar.gz \
-    && mv atlassian-plugin-sdk-9.3.0 /opt/atlassian-plugin-sdk \
-    && rm atlassian-plugin-sdk-9.3.0.tar.gz
-
-# Add AMPS to PATH
-ENV PATH="/opt/atlassian-plugin-sdk/bin:${PATH}"
-
 WORKDIR /app
 
-# Copy and cache dependencies first
+# Copy pom.xml first for better layer caching
 COPY pom.xml .
-RUN atlas-mvn dependency:go-offline -B
 
-# Copy source code and build
+# Download dependencies
+RUN mvn dependency:go-offline -B
+
+# Copy source code and build with Maven directly
 COPY src ./src
-RUN atlas-mvn clean package -DskipTests -B
+
+# Build the plugin using standard Maven (your pom.xml has jira-maven-plugin)
+RUN mvn clean package -DskipTests -B
 
 # Verify build output
-RUN ls -la target/ && \
+RUN echo "Build verification:" && \
+    ls -la target/ && \
     find target/ -name "*.jar" -type f
 
 # ==========================================
@@ -31,7 +27,6 @@ RUN ls -la target/ && \
 # ==========================================
 FROM atlassian/jira-software:10.3
 
-# Switch to root for installations
 USER root
 
 # Install AWS CLI
@@ -52,11 +47,6 @@ COPY --from=builder /app/target/myPlugin-1.0.0-SNAPSHOT.jar \
 # Set proper permissions
 RUN chown -R jira:jira /opt/atlassian/jira/atlassian-jira/WEB-INF/atlassian-bundled-plugins/
 
-# Switch back to jira user
 USER jira
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD curl -f http://localhost:8080/status || exit 1
 
 EXPOSE 8080
