@@ -12,30 +12,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 21 (Latest LTS)
-        uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-
-      - name: Install Atlassian SDK
+      - name: Build JAR with Atlassian SDK Docker
         run: |
-          wget https://maven.atlassian.com/public/com/atlassian/amps/atlassian-plugin-sdk/8.2.7/atlassian-plugin-sdk-8.2.7.tar.gz
-          tar -xzf atlassian-plugin-sdk-8.2.7.tar.gz
-          sudo mv atlassian-plugin-sdk-8.2.7 /opt/atlassian-plugin-sdk
-          echo 'export PATH=/opt/atlassian-plugin-sdk/bin:$PATH' >> $GITHUB_ENV
-
-      - name: Build with Maven
-        run: atlas-mvn clean package -DskipTests
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+          # Use pre-built AMPS Docker image to build the plugin
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            translucent/atlassian-plugin-sdk:latest \
+            atlas-mvn clean package -DskipTests
+          
+          # Verify build artifact
+          echo "Built JAR files:"
+          find target/ -name "*.jar" -type f
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -54,7 +42,9 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/myplugin:latest
+          tags: ${{ steps.login-ecr.outputs.registry }}/jira-plugin:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -63,11 +53,12 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Login to ECR using IAM role
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+            ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+            IMAGE_URI="${ECR_REGISTRY}/jira-plugin:latest"
             
-            # Pull and run container
-            docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/myplugin:latest
-            docker stop jira || true
-            docker rm jira || true
-            docker run -d --name jira -p 8080:8080 ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/myplugin:latest
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
+            
+            docker pull $IMAGE_URI
+            docker stop jira-plugin || true
+            docker rm jira-plugin || true
+            docker run -d --name jira-plugin -p 8080:8080 --restart unless-stopped $IMAGE_URI
