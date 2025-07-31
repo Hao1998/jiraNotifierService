@@ -19,29 +19,18 @@
     <description>This is the com.atlassian.tutorial:myPlugin plugin for Atlassian JIRA.</description>
 
     <properties>
-        <!-- FIXED: Use Jira 10.3 LTS - most stable for plugin development -->
         <jira.version>10.3.5</jira.version>
-
         <amps.version>9.3.0</amps.version>
-
-        <!-- Latest Spring Scanner version -->
         <atlassian.spring.scanner.version>3.0.2</atlassian.spring.scanner.version>
-
-        <!-- Other plugin versions -->
         <plugin.testrunner.version>2.0.9</plugin.testrunner.version>
         <testkit.version>6.3.11</testkit.version>
-
-        <!-- FIXED: Use Java 17 LTS - modern and stable -->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
     </properties>
 
-    <!-- UPDATED: New repository URLs as per Feb 2025 changes -->
     <repositories>
-        <!-- Maven Central - Primary repository -->
         <repository>
             <id>maven-central</id>
             <name>Maven Central</name>
@@ -54,7 +43,6 @@
             </snapshots>
         </repository>
 
-        <!-- NEW: Atlassian Maven Public - Updated URL -->
         <repository>
             <id>atlassian-public</id>
             <name>Atlassian Public Repository</name>
@@ -70,7 +58,6 @@
             </snapshots>
         </repository>
 
-        <!-- NEW: Atlassian Maven Proxy (includes third-party dependencies) -->
         <repository>
             <id>atlassian-proxy</id>
             <name>Atlassian Maven Proxy</name>
@@ -85,28 +72,8 @@
                 <checksumPolicy>warn</checksumPolicy>
             </snapshots>
         </repository>
-
-        <!-- Additional repositories for missing dependencies -->
-        <repository>
-            <id>terracotta</id>
-            <name>Terracotta</name>
-            <url>https://repo.terracotta.org/maven2/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-
-        <repository>
-            <id>gradle-plugins</id>
-            <name>Gradle Plugins</name>
-            <url>https://plugins.gradle.org/m2/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
     </repositories>
 
-    <!-- UPDATED: Plugin repositories with new URLs -->
     <pluginRepositories>
         <pluginRepository>
             <id>maven-central</id>
@@ -148,10 +115,17 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <!-- Rest of your dependencies and build configuration remain the same -->
     <dependencyManagement>
         <dependencies>
-            <!-- FIXED: Override problematic ehcache version -->
+            <!-- FORCE override commons-httpclient to use standard version -->
+            <dependency>
+                <groupId>commons-httpclient</groupId>
+                <artifactId>commons-httpclient</artifactId>
+                <version>3.1</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Override problematic ehcache version -->
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
                 <artifactId>ehcache</artifactId>
@@ -166,6 +140,7 @@
                 <version>2.5.1</version>
                 <scope>provided</scope>
             </dependency>
+
             <!-- AWS SDK BOM for consistent AWS dependency versions -->
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -173,6 +148,14 @@
                 <version>1.12.767</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Override problematic JNDI dependency -->
+            <dependency>
+                <groupId>jndi</groupId>
+                <artifactId>jndi</artifactId>
+                <version>1.2.1</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -184,11 +167,15 @@
             <artifactId>jira-api</artifactId>
             <version>${jira.version}</version>
             <scope>provided</scope>
-            <!-- FIXED: Exclude problematic ehcache dependency -->
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache</artifactId>
+                </exclusion>
+                <!-- EXCLUDE problematic commons-httpclient versions -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -198,16 +185,20 @@
             <artifactId>jira-core</artifactId>
             <version>${jira.version}</version>
             <scope>provided</scope>
-            <!-- FIXED: Exclude problematic ehcache dependency -->
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache</artifactId>
                 </exclusion>
+                <!-- EXCLUDE problematic commons-httpclient versions -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
-        <!-- FIXED: Spring 6.x works great with Java 17 and Jira 10.3 -->
+        <!-- Spring dependencies -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -229,7 +220,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated Spring Scanner with CORRECT scope -->
+        <!-- Updated Spring Scanner -->
         <dependency>
             <groupId>com.atlassian.plugin</groupId>
             <artifactId>atlassian-spring-scanner-annotation</artifactId>
@@ -245,7 +236,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated JSON Smart -->
+        <!-- JSON Smart -->
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
@@ -267,7 +258,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated HTTP Components -->
+        <!-- HTTP Components - Use Apache HttpClient 4.x instead of commons-httpclient -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -275,18 +266,42 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated AWS SDK with BOM management -->
+        <!-- AWS SDK - SIMPLIFIED to reduce conflicts -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
             <exclusions>
+                <!-- Exclude Jackson to use Jira's version -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <!-- Exclude HTTP components to use provided versions -->
+                <exclusion>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <!-- EXCLUDE ALL commons-httpclient variants -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
+                <!-- EXCLUDE problematic JNDI dependency -->
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
                 </exclusion>
             </exclusions>
             <scope>compile</scope>
@@ -297,18 +312,42 @@
             <artifactId>aws-java-sdk-sts</artifactId>
             <scope>provided</scope>
             <exclusions>
+                <!-- Exclude Jackson -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <!-- Exclude HTTP components -->
+                <exclusion>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <!-- EXCLUDE ALL commons-httpclient variants -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
+                <!-- EXCLUDE problematic JNDI dependency -->
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
 
-        <!-- CGLib updated -->
+        <!-- CGLib -->
         <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib-nodep</artifactId>
@@ -316,7 +355,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated annotations -->
+        <!-- Annotations -->
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
@@ -331,7 +370,7 @@
             <version>0.6.0</version>
         </dependency>
 
-        <!-- Lombok - updated to latest -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -354,7 +393,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Test runner -->
         <dependency>
             <groupId>com.atlassian.plugins</groupId>
             <artifactId>atlassian-plugins-osgi-testrunner</artifactId>
@@ -365,7 +403,7 @@
 
     <build>
         <plugins>
-            <!-- FIXED: Maven Compiler Plugin for Java 17 -->
+            <!-- Maven Compiler Plugin for Java 17 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -377,7 +415,7 @@
                 </configuration>
             </plugin>
 
-            <!-- FIXED: Updated Jira Maven Plugin -->
+            <!-- Jira Maven Plugin -->
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>jira-maven-plugin</artifactId>
@@ -396,6 +434,9 @@
                         <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor</exclude>
                         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
                         <exclude>commons-codec:commons-codec</exclude>
+                        <!-- EXCLUDE all commons-httpclient variants -->
+                        <exclude>commons-httpclient:commons-httpclient</exclude>
+                        <exclude>jndi:jndi</exclude>
                     </banningExcludes>
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
@@ -430,6 +471,7 @@
                             !kotlin.*,
                             !com.sun.*,
                             !org.apache.commons.logging.*,
+                            !commons.httpclient.*,
                             *;resolution:=optional
                         </Import-Package>
                         <Spring-Context>*</Spring-Context>
@@ -437,7 +479,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Updated Spring Scanner Maven Plugin -->
+            <!-- Spring Scanner Maven Plugin -->
             <plugin>
                 <groupId>com.atlassian.plugin</groupId>
                 <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
@@ -452,7 +494,7 @@
                 </executions>
             </plugin>
 
-            <!-- Updated Surefire Plugin for testing -->
+            <!-- Surefire Plugin for testing -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
