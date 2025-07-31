@@ -166,6 +166,7 @@
                 <version>2.5.1</version>
                 <scope>provided</scope>
             </dependency>
+
             <!-- AWS SDK BOM for consistent AWS dependency versions -->
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -173,6 +174,22 @@
                 <version>1.12.767</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- FIXED: Override problematic JNDI dependency -->
+            <dependency>
+                <groupId>jndi</groupId>
+                <artifactId>jndi</artifactId>
+                <version>1.2.1</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- FIXED: Override problematic commons-httpclient -->
+            <dependency>
+                <groupId>commons-httpclient</groupId>
+                <artifactId>commons-httpclient</artifactId>
+                <version>3.1</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -288,6 +305,16 @@
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
                 </exclusion>
+                <!-- EXCLUDE problematic JNDI dependency -->
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
+                </exclusion>
+                <!-- EXCLUDE problematic commons-httpclient -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
             </exclusions>
             <scope>compile</scope>
         </dependency>
@@ -304,6 +331,16 @@
                 <exclusion>
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
+                </exclusion>
+                <!-- EXCLUDE problematic JNDI dependency -->
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
+                </exclusion>
+                <!-- EXCLUDE problematic commons-httpclient -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -396,6 +433,9 @@
                         <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor</exclude>
                         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
                         <exclude>commons-codec:commons-codec</exclude>
+                        <!-- EXCLUDE problematic dependencies -->
+                        <exclude>jndi:jndi</exclude>
+                        <exclude>commons-httpclient:commons-httpclient</exclude>
                     </banningExcludes>
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
