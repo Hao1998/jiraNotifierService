@@ -1,11 +1,10 @@
 FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /app
 
-# Copy POM and resolve dependencies
+# Copy POM first (for Docker layer caching)
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
 
-# Build the plugin
+# Build the plugin directly (no go-offline step)
 COPY src ./src
 RUN mvn clean package -DskipTests -B
 
