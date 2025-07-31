@@ -115,6 +115,7 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <!-- Rest of your dependencies and build configuration remain the same -->
     <dependencyManagement>
         <dependencies>
             <!-- FORCE override commons-httpclient to use standard version -->
@@ -167,6 +168,7 @@
             <artifactId>jira-api</artifactId>
             <version>${jira.version}</version>
             <scope>provided</scope>
+            <!-- FIXED: Exclude problematic ehcache dependency -->
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
@@ -185,6 +187,7 @@
             <artifactId>jira-core</artifactId>
             <version>${jira.version}</version>
             <scope>provided</scope>
+            <!-- FIXED: Exclude problematic ehcache dependency -->
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
@@ -236,7 +239,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JSON Smart -->
+        <!-- Updated JSON Smart -->
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
@@ -258,7 +261,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- HTTP Components - Use Apache HttpClient 4.x instead of commons-httpclient -->
+        <!-- Updated HTTP Components -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -266,7 +269,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- AWS SDK - SIMPLIFIED to reduce conflicts -->
+        <!-- Updated AWS SDK with BOM management -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
@@ -471,7 +474,6 @@
                             !kotlin.*,
                             !com.sun.*,
                             !org.apache.commons.logging.*,
-                            !commons.httpclient.*,
                             *;resolution:=optional
                         </Import-Package>
                         <Spring-Context>*</Spring-Context>
