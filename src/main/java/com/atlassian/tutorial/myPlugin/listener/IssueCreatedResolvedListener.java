@@ -151,7 +151,7 @@ public class IssueCreatedResolvedListener implements InitializingBean, Disposabl
 //            request.setRequestBody(jsonPayload);
 //
 //            String response = request.execute();
-            String response = awsConfig.invokeApi(awsConfig.getMessagesUrl(), String.valueOf(Request.MethodType.POST), jsonPayload);
+            String response = awsConfig.invokeApi(awsConfig.getMessagesUrl(), "POST", jsonPayload, apiKey);
             System.out.println("API Response: " + response);
         } catch (Exception e) {
             System.out.println("Error sending critical issue notification: " + e);

@@ -115,17 +115,8 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <!-- Rest of your dependencies and build configuration remain the same -->
     <dependencyManagement>
         <dependencies>
-            <!-- FORCE override commons-httpclient to use standard version -->
-            <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>3.1</version>
-                <scope>provided</scope>
-            </dependency>
-
             <!-- Override problematic ehcache version -->
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
@@ -134,28 +125,11 @@
                 <scope>provided</scope>
             </dependency>
 
-            <!-- Updated JSON Smart to latest secure version -->
+            <!-- JSON Smart -->
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
                 <version>2.5.1</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <!-- AWS SDK BOM for consistent AWS dependency versions -->
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-bom</artifactId>
-                <version>1.12.767</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- Override problematic JNDI dependency -->
-            <dependency>
-                <groupId>jndi</groupId>
-                <artifactId>jndi</artifactId>
-                <version>1.2.1</version>
                 <scope>provided</scope>
             </dependency>
         </dependencies>
@@ -168,16 +142,10 @@
             <artifactId>jira-api</artifactId>
             <version>${jira.version}</version>
             <scope>provided</scope>
-            <!-- FIXED: Exclude problematic ehcache dependency -->
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache</artifactId>
-                </exclusion>
-                <!-- EXCLUDE problematic commons-httpclient versions -->
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -187,16 +155,10 @@
             <artifactId>jira-core</artifactId>
             <version>${jira.version}</version>
             <scope>provided</scope>
-            <!-- FIXED: Exclude problematic ehcache dependency -->
             <exclusions>
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache</artifactId>
-                </exclusion>
-                <!-- EXCLUDE problematic commons-httpclient versions -->
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -205,7 +167,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>6.2.7</version>
+            <version>6.1.12</version>
             <scope>provided</scope>
         </dependency>
 
@@ -223,7 +185,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated Spring Scanner -->
+        <!-- Spring Scanner -->
         <dependency>
             <groupId>com.atlassian.plugin</groupId>
             <artifactId>atlassian-spring-scanner-annotation</artifactId>
@@ -239,7 +201,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated JSON Smart -->
+        <!-- JSON Smart -->
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
@@ -261,100 +223,11 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Updated HTTP Components -->
+        <!-- HTTP Client - Use what Jira provides -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.14</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Updated AWS SDK with BOM management -->
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-core</artifactId>
-            <exclusions>
-                <!-- Exclude Jackson to use Jira's version -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <!-- Exclude HTTP components to use provided versions -->
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpcore</artifactId>
-                </exclusion>
-                <!-- EXCLUDE ALL commons-httpclient variants -->
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
-                </exclusion>
-                <!-- EXCLUDE problematic JNDI dependency -->
-                <exclusion>
-                    <groupId>jndi</groupId>
-                    <artifactId>jndi</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sts</artifactId>
-            <scope>provided</scope>
-            <exclusions>
-                <!-- Exclude Jackson -->
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <!-- Exclude HTTP components -->
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpcore</artifactId>
-                </exclusion>
-                <!-- EXCLUDE ALL commons-httpclient variants -->
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
-                </exclusion>
-                <!-- EXCLUDE problematic JNDI dependency -->
-                <exclusion>
-                    <groupId>jndi</groupId>
-                    <artifactId>jndi</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- CGLib -->
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
-            <version>3.3.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -406,7 +279,7 @@
 
     <build>
         <plugins>
-            <!-- Maven Compiler Plugin for Java 17 -->
+            <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -437,21 +310,11 @@
                         <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor</exclude>
                         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
                         <exclude>commons-codec:commons-codec</exclude>
-                        <!-- EXCLUDE all commons-httpclient variants -->
-                        <exclude>commons-httpclient:commons-httpclient</exclude>
-                        <exclude>jndi:jndi</exclude>
                     </banningExcludes>
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
                         <Export-Package>com.atlassian.tutorial.myPlugin.api,</Export-Package>
                         <Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
-                        <Embed-Dependency>
-                            aws-java-sdk-core,
-                            aws-java-sdk-sts;
-                            scope=compile;
-                            inline=false
-                        </Embed-Dependency>
-                        <Embed-Transitive>true</Embed-Transitive>
                         <Import-Package>
                             org.springframework.beans;version="[5.0,7.0)",
                             org.springframework.context;version="[5.0,7.0)",
@@ -467,13 +330,6 @@
                             org.apache.http.message;version="[4.4,5.0)",
                             org.apache.http.entity;version="[4.4,5.0)",
                             org.apache.http.util;version="[4.4,5.0)",
-                            !com.amazonaws.*,
-                            !org.apache.avalon.*,
-                            !software.amazon.*,
-                            !org.joda.*,
-                            !kotlin.*,
-                            !com.sun.*,
-                            !org.apache.commons.logging.*,
                             *;resolution:=optional
                         </Import-Package>
                         <Spring-Context>*</Spring-Context>
@@ -496,7 +352,7 @@
                 </executions>
             </plugin>
 
-            <!-- Surefire Plugin for testing -->
+            <!-- Surefire Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

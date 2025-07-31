@@ -2,12 +2,6 @@ package com.atlassian.tutorial.myPlugin.config;
 
 import javax.annotation.PostConstruct;
 
-import com.amazonaws.DefaultRequest;
-import com.amazonaws.Request;
-import com.amazonaws.auth.AWS4Signer;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.http.HttpMethodName;
-import com.amazonaws.util.IOUtils;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import java.net.HttpURLConnection;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,11 +10,8 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.inject.Named;
 import java.io.*;
-import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
 
 
 @Configuration
@@ -37,116 +28,47 @@ public class AwsConfig {
     @Value("${aws.api.endpoints.analytics}")
     private String analyticsEndpoint;
 
-    private AWSCredentialsProvider credentialsProvider;
 
     public String getBaseUrl() {
         return baseUrl;
     }
 
-    @PostConstruct
-    public void init() {
-        // Use default credentials provider chain for EC2
-        credentialsProvider = new com.amazonaws.auth.DefaultAWSCredentialsProviderChain();
+    public String getMessagesEndpoint() {
+        return messagesEndpoint;
     }
 
-    // Method to sign and send API requests
-    public String invokeApi(String path, String method, String payload) {
-            String url = path;
-            System.out.println("Making request to invokeApi: " + url);
-            // Create request
-            DefaultRequest<String> request = new DefaultRequest<>("execute-api");
-            request.setHttpMethod(HttpMethodName.fromValue(method));
-            request.setEndpoint(URI.create(url));
-
-            if (payload != null && !payload.isEmpty()) {
-                request.setContent(new ByteArrayInputStream(payload.getBytes(StandardCharsets.UTF_8)));
-            }
-
-            // Sign the request using SigV4
-            AWS4Signer signer = new AWS4Signer();
-            signer.setServiceName("execute-api");
-            signer.setRegionName("us-east-1");
-            signer.sign(request, credentialsProvider.getCredentials());
-
-            // Execute the signed request using your HTTP client
-            // (implementation will depend on your HTTP client library)
-            return executeSignedRequest(request);
-
-    }
-
-
-    private String executeSignedRequest(Request<?> request) {
+    // Method to send API requests without AWS SDK
+    public String invokeApi(String url, String method, String payload, String apiKey) {
         try {
-            URL url = request.getEndpoint().toURL();
-            HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
-
-            connection.setRequestMethod(request.getHttpMethod().name());
-
-            // Log request details
-            System.out.println("Making request to: " + url);
-            System.out.println("HTTP Method: " + request.getHttpMethod().name());
-
-            // Add and log all headers from the signed request
-            System.out.println("Request Headers:");
-            for (Map.Entry<String, String> header : request.getHeaders().entrySet()) {
-                System.out.println("  " + header.getKey() + ": " + header.getValue());
-                connection.setRequestProperty(header.getKey(), header.getValue());
+            System.out.println("Making request to invokeApi: " + url);
+            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setRequestMethod(method);
+            connection.setRequestProperty("Content-Type", "application/json");
+            if (apiKey != null && !apiKey.isEmpty()) {
+                connection.setRequestProperty("x-api-key", apiKey);
             }
-
-            // Write content if it exists
-            if (request.getContent() != null) {
-                connection.setDoOutput(true);
-                try (OutputStream out = connection.getOutputStream()) {
-                    IOUtils.copy(request.getContent(), out);
+            connection.setDoOutput(true);
+            if (payload != null && !payload.isEmpty()) {
+                try (OutputStream os = connection.getOutputStream()) {
+                    byte[] input = payload.getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
                 }
-                System.out.println("Request body sent");
             }
-
-            // Get response
             int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
-
-            // Log response headers
-            System.out.println("Response Headers:");
-            for (Map.Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
-                if (header.getKey() != null) {
-                    System.out.println("  " + header.getKey() + ": " + String.join(", ", header.getValue()));
+            InputStream is = (responseCode >= 200 && responseCode < 300) ? connection.getInputStream() : connection.getErrorStream();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
                 }
-            }
-
-            if (responseCode >= 200 && responseCode < 300) {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(connection.getInputStream()))) {
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    return response.toString();
-                }
-            } else {
-                // Read and log the error response
-                String errorResponse = "";
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(connection.getErrorStream()))) {
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    errorResponse = response.toString();
-                    System.out.println("Error Response: " + errorResponse);
-                } catch (Exception e) {
-                    System.out.println("Could not read error response: " + e.getMessage());
-                }
-                throw new RuntimeException("API request failed with status: " + responseCode +
-                        " Error details: " + errorResponse);
+                return response.toString();
             }
         } catch (IOException e) {
-            e.printStackTrace();
             throw new RuntimeException("Failed to execute HTTP request", e);
         }
     }
+
 
     public String getMessagesUrl() {
         return baseUrl + messagesEndpoint;
