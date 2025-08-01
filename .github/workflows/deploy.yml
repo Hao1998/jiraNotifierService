@@ -29,7 +29,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/jira-plugin:latest
+          tags: ${{ steps.login-ecr.outputs.registry }}/myplugin:latest
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
@@ -39,23 +39,23 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-            IMAGE_URI="${ECR_REGISTRY}/jira-plugin:latest"
+            IMAGE_URI="${ECR_REGISTRY}/myplugin:latest"
             
             # Login to ECR
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             
             # Pull and run container
             docker pull $IMAGE_URI
-            docker stop jira-plugin || true
-            docker rm jira-plugin || true
-            docker run -d --name jira-plugin -p 8080:8080 --restart unless-stopped $IMAGE_URI
+            docker stop myplugin || true
+            docker rm myplugin || true
+            docker run -d --name myplugin -p 8080:8080 --restart unless-stopped $IMAGE_URI
             
             # Health check
             sleep 10
-            if docker ps | grep -q jira-plugin; then
+            if docker ps | grep -q myplugin; then
               echo "✅ Container started successfully"
             else
               echo "❌ Container failed to start"
-              docker logs jira-plugin
+              docker logs myplugin
               exit 1
             fi
