@@ -9,17 +9,11 @@ import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.query.Query;
-
-import com.atlassian.sal.api.net.Request;
-import com.atlassian.sal.api.net.RequestFactory;
-
-import com.atlassian.sal.api.net.Response;
 import com.atlassian.scheduler.JobRunner;
 import com.atlassian.scheduler.JobRunnerRequest;
 import com.atlassian.scheduler.JobRunnerResponse;
 import com.atlassian.tutorial.myPlugin.config.AwsConfig;
 import com.google.gson.Gson;
-import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -37,17 +31,17 @@ public class TicketAnalyticsJob implements JobRunner {
 
     private final SearchService searchService;
     private final JqlQueryParser jqlQueryParser;
-    private final RequestFactory requestFactory;
     private final AwsConfig awsConfig;
+    private final String apiKey;
 
 
     public TicketAnalyticsJob(@ComponentImport SearchService searchService,
                               @ComponentImport JqlQueryParser jqlQueryParser,
-                              @ComponentImport RequestFactory requestFactory,
+                               @Value("${aws.api.key}") String apiKey,
                                AwsConfig awsConfig) {
         this.searchService = searchService;
+        this.apiKey = apiKey;
         this.jqlQueryParser = jqlQueryParser;
-        this.requestFactory = requestFactory;
         this.awsConfig = awsConfig;
 
         // Log initialization
@@ -115,14 +109,11 @@ public class TicketAnalyticsJob implements JobRunner {
 
         // Create and configure request
         System.out.println("Sending request to API Gateway: " + awsConfig.getAnalyticsUrl());
-//        Request request = requestFactory.createRequest(Request.MethodType.POST, awsConfig.getAnalyticsUrl());
-//        request.setHeader("Content-Type", "application/json");
-//        request.setRequestBody(jsonPayload);
 
 
         // Send Request
         try {
-            String response = awsConfig.invokeApi(awsConfig.getAnalyticsUrl(), String.valueOf(Request.MethodType.POST), jsonPayload);
+            String response = awsConfig.invokeApi(awsConfig.getAnalyticsUrl(), "POST", jsonPayload, apiKey);
             System.out.println("API Gateway response: " + response);
         } catch (Exception e) {
             System.out.println("Failed to send data to API Gateway: " + e.getMessage());
