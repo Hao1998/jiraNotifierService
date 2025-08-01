@@ -5,15 +5,23 @@ WORKDIR /app
 # Copy POM first (for Docker layer caching)
 COPY pom.xml .
 
-# Clear any cached problematic dependencies and update
-RUN mvn dependency:purge-local-repository -B || true
+# Manually install the problematic commons-httpclient dependency
+RUN mkdir -p /root/.m2/repository/commons-httpclient/commons-httpclient/3.1-jenkins-3 && \
+    curl -L -o /root/.m2/repository/commons-httpclient/commons-httpclient/3.1-jenkins-3/commons-httpclient-3.1-jenkins-3.jar \
+         https://repo.jenkins-ci.org/releases/commons-httpclient/commons-httpclient/3.1-jenkins-3/commons-httpclient-3.1-jenkins-3.jar && \
+    curl -L -o /root/.m2/repository/commons-httpclient/commons-httpclient/3.1-jenkins-3/commons-httpclient-3.1-jenkins-3.pom \
+         https://repo.jenkins-ci.org/releases/commons-httpclient/commons-httpclient/3.1-jenkins-3/commons-httpclient-3.1-jenkins-3.pom || true
 
-# Try to download dependencies separately first
-RUN mvn dependency:resolve -B -U -Dmaven.artifact.threads=1 || true
+# Clear any failed download markers
+RUN find /root/.m2/repository -name "*lastUpdated" -delete || true
+RUN find /root/.m2/repository -name "_remote.repositories" -delete || true
 
-# Build the plugin directly with force update and fail-at-end
+# Try to resolve dependencies
+RUN mvn dependency:resolve -B -U || true
+
+# Build the plugin
 COPY src ./src
-RUN mvn clean package -DskipTests -B -U -fae --batch-mode -Dmaven.resolver.transport=wagon
+RUN mvn clean package -DskipTests -B -U
 
 # Runtime stage
 FROM atlassian/jira-software:10.3
