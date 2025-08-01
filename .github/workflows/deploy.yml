@@ -38,22 +38,33 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-            IMAGE_URI="${ECR_REGISTRY}/myplugin:latest"
-            
-            # Login to ECR
+            IMAGE_URI="$ECR_REGISTRY/myplugin:latest"
+
+            echo "🔍 Starting deployment..."
+            echo "Registry: $ECR_REGISTRY"
+            echo "Image: $IMAGE_URI"
+
+            echo "🔐 Logging into ECR..."
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
-            
-            # Pull and run container
+
+            echo "📥 Pulling image..."
             docker pull $IMAGE_URI
+
+            echo "🛑 Stopping existing container..."
             docker stop myplugin || true
             docker rm myplugin || true
+
+            echo "🚀 Starting new container..."
             docker run -d --name myplugin -p 8080:8080 --restart unless-stopped $IMAGE_URI
-            
-            # Health check
+
+            echo "⏳ Waiting for container to start..."
             sleep 10
+
             if docker ps | grep -q myplugin; then
               echo "✅ Container started successfully"
+              docker ps | grep myplugin
             else
               echo "❌ Container failed to start"
               docker logs myplugin
