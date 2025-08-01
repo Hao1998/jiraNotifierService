@@ -136,7 +136,7 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Core Jira dependencies -->
+        <!-- Core Jira dependencies with exclusions for problematic legacy dependencies -->
         <dependency>
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-api</artifactId>
@@ -146,6 +146,20 @@
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache</artifactId>
+                </exclusion>
+                <!-- Exclude problematic legacy JNDI dependency -->
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
+                </exclusion>
+                <!-- Exclude problematic legacy JTA dependency -->
+                <exclusion>
+                    <groupId>jta</groupId>
+                    <artifactId>jta</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.transaction</groupId>
+                    <artifactId>jta</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -159,6 +173,20 @@
                 <exclusion>
                     <groupId>net.sf.ehcache</groupId>
                     <artifactId>ehcache</artifactId>
+                </exclusion>
+                <!-- Exclude problematic legacy JNDI dependency -->
+                <exclusion>
+                    <groupId>jndi</groupId>
+                    <artifactId>jndi</artifactId>
+                </exclusion>
+                <!-- Exclude problematic legacy JTA dependency -->
+                <exclusion>
+                    <groupId>jta</groupId>
+                    <artifactId>jta</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.transaction</groupId>
+                    <artifactId>jta</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -310,6 +338,10 @@
                         <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor</exclude>
                         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
                         <exclude>commons-codec:commons-codec</exclude>
+                        <!-- Exclude legacy dependencies from banning checks -->
+                        <exclude>jndi:jndi</exclude>
+                        <exclude>jta:jta</exclude>
+                        <exclude>javax.transaction:jta</exclude>
                     </banningExcludes>
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
