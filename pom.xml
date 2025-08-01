@@ -161,6 +161,11 @@
                     <groupId>javax.transaction</groupId>
                     <artifactId>jta</artifactId>
                 </exclusion>
+                <!-- Exclude problematic commons-httpclient -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httcclient</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -187,6 +192,11 @@
                 <exclusion>
                     <groupId>javax.transaction</groupId>
                     <artifactId>jta</artifactId>
+                </exclusion>
+                <!-- Exclude problematic commons-httpclient -->
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -342,6 +352,7 @@
                         <exclude>jndi:jndi</exclude>
                         <exclude>jta:jta</exclude>
                         <exclude>javax.transaction:jta</exclude>
+                        <exclude>commons-httpclient:commons-httpclient</exclude>
                     </banningExcludes>
                     <instructions>
                         <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
