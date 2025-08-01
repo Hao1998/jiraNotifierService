@@ -8,9 +8,12 @@ COPY pom.xml .
 # Clear any cached problematic dependencies and update
 RUN mvn dependency:purge-local-repository -B || true
 
-# Build the plugin directly with force update and offline bypass
+# Try to download dependencies separately first
+RUN mvn dependency:resolve -B -U -Dmaven.artifact.threads=1 || true
+
+# Build the plugin directly with force update and fail-at-end
 COPY src ./src
-RUN mvn clean package -DskipTests -B -U --fail-never
+RUN mvn clean package -DskipTests -B -U -fae --batch-mode -Dmaven.resolver.transport=wagon
 
 # Runtime stage
 FROM atlassian/jira-software:10.3
