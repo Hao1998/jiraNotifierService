@@ -13,26 +13,36 @@ RUN mkdir -p /root/.m2/repository/commons-httpclient/commons-httpclient/3.1-jenk
          https://repo.jenkins-ci.org/releases/commons-httpclient/commons-httpclient/3.1-jenkins-3/commons-httpclient-3.1-jenkins-3.pom || true
 
 # Clear any failed download markers
-RUN find /root/.m2/repository -name "*lastUpdated" -delete || true
-RUN find /root/.m2/repository -name "_remote.repositories" -delete || true
+RUN find /root/.m2/repository -name "*lastUpdated" -delete || true && \
+    find /root/.m2/repository -name "_remote.repositories" -delete || true
 
-# Try to resolve dependencies
-RUN mvn dependency:resolve -B -U || true
+# Resolve dependencies
+RUN mvn dependency:go-offline -B -U || true
 
-# Build the plugin
+# Copy source and build
 COPY src ./src
 RUN mvn clean package -DskipTests -B -U
 
-# Runtime stage
+# Verify the JAR was built and show size
+RUN ls -la target/ && \
+    test -f target/myPlugin-1.0.0-SNAPSHOT.jar && \
+    echo "JAR size: $(du -h target/myPlugin-1.0.0-SNAPSHOT.jar)"
+
+# Runtime Stage - This should be much smaller
 FROM atlassian/jira-software:10.3
+
+# Switch to root for file operations
 USER root
 
-# Copy the built plugin
+# Create plugin directory and copy ONLY the JAR
+RUN mkdir -p /var/atlassian/application-data/jira/plugins/installed-plugins/
 COPY --from=builder /app/target/myPlugin-1.0.0-SNAPSHOT.jar \
-     /opt/atlassian/jira/atlassian-jira/WEB-INF/atlassian-bundled-plugins/
+     /var/atlassian/application-data/jira/plugins/installed-plugins/
 
 # Fix permissions
-RUN chown -R jira:jira /opt/atlassian/jira/atlassian-jira/WEB-INF/atlassian-bundled-plugins/
+RUN chown -R jira:jira /var/atlassian/application-data/jira/
 
+# Switch back to jira user
 USER jira
+
 EXPOSE 8080
