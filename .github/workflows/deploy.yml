@@ -37,6 +37,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          # Copy files to the remote server
+          source: "docker-compose.yml,.env.example"
+          target: "/home/ec2-user/app"
           script: |
             set -e
             ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
@@ -52,21 +55,65 @@ jobs:
             echo "📥 Pulling image..."
             docker pull $IMAGE_URI
 
-            echo "🛑 Stopping existing container..."
+            echo "📂 Navigating to app directory..."
+            cd /home/ec2-user/app
+
+            echo "🔧 Setting up environment..."
+            # Create .env file with production values
+            cat > .env << EOF
+            AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            POSTGRES_USER=jira
+            POSTGRES_PASSWORD=jirapass
+            POSTGRES_DB=jiradb
+            EOF
+
+            echo "🔧 Using Docker Compose V2..."
+            
+            echo "🛑 Stopping existing stack..."
+            docker compose down || true
+            
+            # Clean up old single container if it exists
             docker stop myplugin || true
             docker rm myplugin || true
 
-            echo "🚀 Starting new container..."
-            docker run -d --name myplugin -p 8080:8080 --restart unless-stopped $IMAGE_URI
+            echo "📋 Validating docker-compose configuration..."
+            docker compose config
 
-            echo "⏳ Waiting for container to start..."
-            sleep 10
+            echo "🚀 Starting full stack..."
+            docker compose up -d
 
-            if docker ps | grep -q myplugin; then
-              echo "✅ Container started successfully"
-              docker ps | grep myplugin
+            echo "⏳ Waiting for containers to start..."
+            sleep 20
+
+            echo "📊 Checking container status..."
+            docker compose ps
+
+            if docker compose ps | grep -E "(Up|running)"; then
+              echo "✅ Stack started successfully"
+              echo ""
+              echo "📋 Running Containers:"
+              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+              echo ""
+              echo "🔍 Service URLs:"
+              echo "Jira: http://${{ secrets.EC2_HOST }}:8080"
+            
+              # Test database connectivity
+              echo "🧪 Testing database connectivity..."
+              sleep 5
+              if docker compose exec -T postgresql pg_isready -U jira -d jiradb; then
+                echo "✅ Database is ready and accessible"
+              else
+                echo "⚠️ Database not ready yet (may need more time)"
+              fi
+            
             else
-              echo "❌ Container failed to start"
-              docker logs myplugin
+              echo "❌ Stack failed to start"
+              echo ""
+              echo "📋 Container Status:"
+              docker compose ps
+              echo ""
+              echo "📝 Logs:"
+              docker compose logs --tail=30
               exit 1
             fi
