@@ -31,115 +31,122 @@ jobs:
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/myplugin:latest
 
-      # Step 1: Copy files to EC2
-      - name: Copy Docker Compose files to EC2
+      # Step 1: Transfer files using SCP
+      - name: Transfer Docker Compose files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "docker-compose.yml"
+          target: "/home/ec2-user/app/"
+          strip_components: 0
+
+      # Step 2: Deploy using SSH
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml"
-          target: "/home/ec2-user/app"
+          port: 22
+          script: |
+            set -e
+            ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+            IMAGE_URI="$ECR_REGISTRY/myplugin:latest"
 
-      # Step 2: Deploy using the copied files
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-            host: ${{ secrets.EC2_HOST }}
-            username: ${{ secrets.EC2_USER }}
-            key: ${{ secrets.EC2_SSH_KEY }}
-            script: |
-              set -e
-              ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-              IMAGE_URI="$ECR_REGISTRY/myplugin:latest"
-              
-              echo "🔍 Starting deployment..."
-              echo "Docker version: $(docker --version)"
-              
-              # Install Docker Compose V2 plugin if not available
-              if ! docker compose version &>/dev/null; then
-                echo "📦 Installing Docker Compose V2 plugin..."
-              
-                # Create plugin directory
-                mkdir -p ~/.docker/cli-plugins/
-              
-                # Download latest Docker Compose V2
-                curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
-                chmod +x ~/.docker/cli-plugins/docker-compose
-              
-                # Verify installation
-                docker compose version
-                echo "✅ Docker Compose V2 plugin installed successfully"
+            echo "🔍 Starting deployment..."
+            echo "Docker version: $(docker --version)"
+
+            # Install Docker Compose V2 plugin if not available
+            if ! docker compose version &>/dev/null; then
+              echo "📦 Installing Docker Compose V2 plugin..."
+              mkdir -p ~/.docker/cli-plugins/
+              curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+              chmod +x ~/.docker/cli-plugins/docker-compose
+              docker compose version
+              echo "✅ Docker Compose V2 plugin installed successfully"
+            else
+              echo "✅ Docker Compose V2 already available"
+              docker compose version
+            fi
+
+            echo "🔐 Logging into ECR..."
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            echo "📥 Pulling image..."
+            docker pull $IMAGE_URI
+
+            echo "📂 Navigating to app directory..."
+            cd /home/ec2-user/app
+            pwd
+            ls -la
+
+            echo "🔧 Verifying docker-compose.yml exists..."
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "❌ docker-compose.yml not found!"
+              echo "Files in current directory:"
+              ls -la
+              exit 1
+            fi
+
+            echo "✅ docker-compose.yml found. Content:"
+            cat docker-compose.yml
+
+            echo "🔧 Creating .env file..."
+            cat > .env << EOF
+            AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            POSTGRES_USER=jira
+            POSTGRES_PASSWORD=jirapass
+            POSTGRES_DB=jiradb
+            EOF
+
+            echo "🛑 Stopping existing stack..."
+            docker compose down || echo "No existing stack to stop"
+            
+            # Clean up old single container if it exists
+            docker stop myplugin 2>/dev/null || echo "No container named myplugin to stop"
+            docker rm myplugin 2>/dev/null || echo "No container named myplugin to remove"
+
+            echo "📋 Validating docker-compose configuration..."
+            docker compose config
+
+            echo "🚀 Starting full stack..."
+            docker compose up -d
+
+            echo "⏳ Waiting for containers to start..."
+            sleep 20
+
+            echo "📊 Checking container status..."
+            docker compose ps
+
+            if docker compose ps | grep -E "(Up|running)"; then
+              echo "✅ Stack started successfully"
+              echo ""
+              echo "📋 Running Containers:"
+              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+              echo ""
+              echo "🔍 Service URLs:"
+              echo "Jira: http://${{ secrets.EC2_HOST }}:8080"
+            
+              # Test database connectivity
+              echo "🧪 Testing database connectivity..."
+              sleep 5
+              if docker compose exec -T postgresql pg_isready -U jira -d jiradb; then
+                echo "✅ Database is ready and accessible"
               else
-                echo "✅ Docker Compose V2 already available"
-                docker compose version
+                echo "⚠️ Database not ready yet (may need more time)"
               fi
-              
-              echo "🔐 Logging into ECR..."
-              aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
-              
-              echo "📥 Pulling image..."
-              docker pull $IMAGE_URI
-              
-              echo "📂 Creating app directory..."
-              mkdir -p /home/ec2-user/app
-              cd /home/ec2-user/app
-              
-              echo "🔧 Setting up environment..."
-              cat > .env << EOF
-              AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}
-              AWS_REGION=${{ secrets.AWS_REGION }}
-              POSTGRES_USER=jira
-              POSTGRES_PASSWORD=jirapass
-              POSTGRES_DB=jiradb
-              EOF
-              
-              echo "🔧 Using Docker Compose V2..."
-              
-              echo "🛑 Stopping existing stack..."
-              docker compose down || true
-              
-              # Clean up old single container if it exists
-              docker stop myplugin || true
-              docker rm myplugin || true
-              
-              echo "📋 Validating docker-compose configuration..."
-              docker compose config
-              
-              echo "🚀 Starting full stack..."
-              docker compose up -d
-              
-              echo "⏳ Waiting for containers to start..."
-              sleep 20
-              
-              echo "📊 Checking container status..."
+            
+            else
+              echo "❌ Stack failed to start"
+              echo ""
+              echo "📋 Container Status:"
               docker compose ps
-              
-              if docker compose ps | grep -E "(Up|running)"; then
-                echo "✅ Stack started successfully"
-                echo ""
-                echo "📋 Running Containers:"
-                docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-                echo ""
-                echo "🔍 Service URLs:"
-                echo "Jira: http://${{ secrets.EC2_HOST }}:8080"
-              
-                # Test database connectivity
-                echo "🧪 Testing database connectivity..."
-                sleep 5
-                if docker compose exec -T postgresql pg_isready -U jira -d jiradb; then
-                  echo "✅ Database is ready and accessible"
-                else
-                  echo "⚠️ Database not ready yet (may need more time)"
-                fi
-              
-              else
-                echo "❌ Stack failed to start"
-                echo ""
-                echo "📋 Container Status:"
-                docker compose ps
-                echo ""
-                echo "📝 Logs:"
-                docker compose logs --tail=30
-                exit 1
-              fi
+              echo ""
+              echo "📝 Logs:"
+              docker compose logs --tail=30
+              exit 1
+            fi
