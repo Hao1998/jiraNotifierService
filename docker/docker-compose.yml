@@ -7,8 +7,8 @@ services:
     volumes:
       - jira_data:/var/atlassian/jira
     environment:
-      - JVM_MINIMUM_MEMORY=2048m
-      - JVM_MAXIMUM_MEMORY=4096m
+      - JVM_MINIMUM_MEMORY=256m     # Ultra conservative
+      - JVM_MAXIMUM_MEMORY=768m     # Ultra conservative
       - AWS_REGION=${AWS_REGION}
     depends_on:
       - postgresql
@@ -21,6 +21,10 @@ services:
       - POSTGRES_DB=jiradb
     volumes:
       - postgresql_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 128m              # Very small for PostgreSQL
 
 volumes:
   jira_data:
