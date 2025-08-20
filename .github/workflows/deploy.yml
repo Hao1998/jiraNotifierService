@@ -31,15 +31,23 @@ jobs:
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/myplugin:latest
 
+      # Step 1: Copy files to EC2
+      - name: Copy Docker Compose files to EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "/home/ec2-user/app"
+
+      # Step 2: Deploy using the copied files
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          # Copy files to the remote server
-          source: "docker-compose.yml,.env.example"
-          target: "/home/ec2-user/app"
           script: |
             set -e
             ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
@@ -55,6 +63,9 @@ jobs:
             echo "📥 Pulling image..."
             docker pull $IMAGE_URI
 
+            echo "📂 Creating app directory if it doesn't exist..."
+            mkdir -p /home/ec2-user/app
+            
             echo "📂 Navigating to app directory..."
             cd /home/ec2-user/app
 
